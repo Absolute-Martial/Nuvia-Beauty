@@ -67,24 +67,3 @@ jobs:
         with:
           githubToken: ${{ secrets.WIKI_SYNC_SECRET }}
           rootDocsFolder: .wiki-src
-
-      - name: Publish wiki summary
-        shell: bash
-        run: |
-          {
-            echo "## GitHub Wiki publish"
-            echo
-            echo "Source directories synced:"
-            echo
-            echo "- docs"
-            echo "- backend-engine/docs"
-            echo "- admin-panel/docs"
-            echo "- vendor-portal/docs"
-            echo "- storefront/docs"
-            echo
-            echo "Required secret:"
-            echo "- WIKI_SYNC_SECRET"
-            echo
-            echo "Publisher:"
-            echo "- cmbrose/github-docs-to-wiki@v0.20"
-          } >> "${GITHUB_STEP_SUMMARY}"

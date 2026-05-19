@@ -16,16 +16,6 @@ Start here:
 - [Route Inventory](./routes.md)
 - [Deployment](./deployment.md)
 - [Dokploy](./dokploy.md)
-- [Wiki Home](./Home.md)
-
-## GitHub Wiki Publishing
-
-- The repository publishes docs to the GitHub wiki through `.github/workflows/publish-wiki.yml`.
-- The workflow uses [`cmbrose/github-docs-to-wiki`](https://github.com/cmbrose/github-docs-to-wiki) to sync the assembled docs tree.
-- Initialize the repository wiki once in GitHub by creating the first page before running the sync workflow.
-- The workflow keeps wiki page names path-based so sibling docs with the same heading do not collide.
-- Configure a repository secret named `WIKI_SYNC_SECRET` with repo access so the workflow can push into the wiki repository.
-- The repo markdown files remain the source of truth; the wiki is a published mirror built from these docs folders.
 
 ## Current Stack
 
