@@ -1,0 +1,236 @@
+name: Package and Publish Docker Images
+
+on:
+  push:
+    branches:
+      - development
+      - production
+    tags:
+      - "v*"
+    paths:
+      - "backend-engine/**"
+      - "admin-panel/**"
+      - "vendor-portal/**"
+      - "storefront/**"
+      - "package.json"
+      - "yarn.lock"
+      - ".yarnrc"
+      - ".nvmrc"
+      - "docker-compose.yml"
+      - "docker-compose.dev.yml"
+      - "docker-compose.production.yml"
+      - ".github/workflows/publish-images.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish-images-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE_NAME: nuvia-beauty-backend
+  ADMIN_IMAGE_NAME: nuvia-beauty-admin-panel
+  VENDOR_IMAGE_NAME: nuvia-beauty-vendor-portal
+  STOREFRONT_IMAGE_NAME: nuvia-beauty-storefront
+
+jobs:
+  publish:
+    name: Package and push GHCR images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Prepare image names
+        id: images
+        shell: bash
+        run: |
+          OWNER_LC="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          SHORT_SHA="${GITHUB_SHA::12}"
+
+          BACKEND_IMAGE="${REGISTRY}/${OWNER_LC}/${BACKEND_IMAGE_NAME}"
+          ADMIN_IMAGE="${REGISTRY}/${OWNER_LC}/${ADMIN_IMAGE_NAME}"
+          VENDOR_IMAGE="${REGISTRY}/${OWNER_LC}/${VENDOR_IMAGE_NAME}"
+          STOREFRONT_IMAGE="${REGISTRY}/${OWNER_LC}/${STOREFRONT_IMAGE_NAME}"
+
+          {
+            echo "owner_lc=${OWNER_LC}"
+            echo "short_sha=${SHORT_SHA}"
+            echo "backend_image=${BACKEND_IMAGE}"
+            echo "admin_image=${ADMIN_IMAGE}"
+            echo "vendor_image=${VENDOR_IMAGE}"
+            echo "storefront_image=${STOREFRONT_IMAGE}"
+            echo "backend_sha_ref=${BACKEND_IMAGE}:sha-${SHORT_SHA}"
+            echo "admin_sha_ref=${ADMIN_IMAGE}:sha-${SHORT_SHA}"
+            echo "vendor_sha_ref=${VENDOR_IMAGE}:sha-${SHORT_SHA}"
+            echo "storefront_sha_ref=${STOREFRONT_IMAGE}:sha-${SHORT_SHA}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract backend image metadata
+        id: meta-backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.images.outputs.backend_image }}
+          labels: |
+            org.opencontainers.image.title=Nuvia Beauty Backend
+            org.opencontainers.image.description=Laravel backend for Nuvia Beauty
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.licenses=MIT
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=ref,event=branch
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ github.ref_name == github.event.repository.default_branch }}
+
+      - name: Extract admin image metadata
+        id: meta-admin
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.images.outputs.admin_image }}
+          labels: |
+            org.opencontainers.image.title=Nuvia Beauty Admin Panel
+            org.opencontainers.image.description=Private admin panel for Nuvia Beauty
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.licenses=MIT
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=ref,event=branch
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ github.ref_name == github.event.repository.default_branch }}
+
+      - name: Extract vendor image metadata
+        id: meta-vendor
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.images.outputs.vendor_image }}
+          labels: |
+            org.opencontainers.image.title=Nuvia Beauty Vendor Portal
+            org.opencontainers.image.description=Vendor portal for Nuvia Beauty
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.licenses=MIT
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=ref,event=branch
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ github.ref_name == github.event.repository.default_branch }}
+
+      - name: Extract storefront image metadata
+        id: meta-storefront
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.images.outputs.storefront_image }}
+          labels: |
+            org.opencontainers.image.title=Nuvia Beauty Storefront
+            org.opencontainers.image.description=Customer storefront for Nuvia Beauty
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.licenses=MIT
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=ref,event=branch
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ github.ref_name == github.event.repository.default_branch }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend-engine
+          file: ./backend-engine/Dockerfile
+          push: true
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
+          cache-from: type=gha,scope=backend-publish
+          cache-to: type=gha,mode=max,scope=backend-publish
+
+      - name: Build and push admin image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./admin-panel/Dockerfile
+          push: true
+          tags: ${{ steps.meta-admin.outputs.tags }}
+          labels: ${{ steps.meta-admin.outputs.labels }}
+          cache-from: type=gha,scope=admin-publish
+          cache-to: type=gha,mode=max,scope=admin-publish
+
+      - name: Build and push vendor image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./vendor-portal/Dockerfile
+          push: true
+          tags: ${{ steps.meta-vendor.outputs.tags }}
+          labels: ${{ steps.meta-vendor.outputs.labels }}
+          cache-from: type=gha,scope=vendor-publish
+          cache-to: type=gha,mode=max,scope=vendor-publish
+
+      - name: Build and push storefront image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./storefront/Dockerfile
+          push: true
+          tags: ${{ steps.meta-storefront.outputs.tags }}
+          labels: ${{ steps.meta-storefront.outputs.labels }}
+          cache-from: type=gha,scope=storefront-publish
+          cache-to: type=gha,mode=max,scope=storefront-publish
+
+      - name: Validate compose with published image refs
+        env:
+          APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          DB_PASSWORD: ci-placeholder-password
+          DB_ROOT_PASSWORD: ci-placeholder-root-password
+          NUVIA_BACKEND_IMAGE: ${{ steps.images.outputs.backend_sha_ref }}
+          NUVIA_ADMIN_IMAGE: ${{ steps.images.outputs.admin_sha_ref }}
+          NUVIA_VENDOR_IMAGE: ${{ steps.images.outputs.vendor_sha_ref }}
+          NUVIA_STOREFRONT_IMAGE: ${{ steps.images.outputs.storefront_sha_ref }}
+        run: docker compose config > /tmp/nuvia-beauty.compose.rendered.yml
+
+      - name: Publish image summary
+        shell: bash
+        run: |
+          {
+            echo "## Published Nuvia Beauty images"
+            echo
+            echo "Backend image:"
+            echo '```text'
+            echo "${{ steps.images.outputs.backend_image }}"
+            echo '```'
+            echo
+            echo "Admin image:"
+            echo '```text'
+            echo "${{ steps.images.outputs.admin_image }}"
+            echo '```'
+            echo
+            echo "Vendor image:"
+            echo '```text'
+            echo "${{ steps.images.outputs.vendor_image }}"
+            echo '```'
+            echo
+            echo "Storefront image:"
+            echo '```text'
+            echo "${{ steps.images.outputs.storefront_image }}"
+            echo '```'
+          } >> "${GITHUB_STEP_SUMMARY}"

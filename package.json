@@ -1,0 +1,33 @@
+{
+  "name": "nuvia-beauty",
+  "version": "6.8.0",
+  "private": true,
+  "packageManager": "yarn@1.22.22",
+  "engines": {
+    "node": ">=24.15.0",
+    "yarn": ">=1.22.22 <2"
+  },
+  "author": "Nuvia Beauty",
+  "workspaces": [
+    "admin-panel",
+    "storefront",
+    "vendor-portal"
+  ],
+  "scripts": {
+    "clean": "yarn workspaces run rimraf \"{.next,node_modules}\" && rimraf node_modules",
+    "dev:storefront": "yarn workspace @nuvia/storefront dev",
+    "build:storefront": "yarn workspace @nuvia/storefront build",
+    "start:storefront": "yarn workspace @nuvia/storefront start",
+    "dev:admin-panel": "yarn workspace @nuvia/admin-panel dev",
+    "build:admin-panel": "yarn workspace @nuvia/admin-panel build",
+    "start:admin-panel": "yarn workspace @nuvia/admin-panel start",
+    "dev:vendor-portal": "yarn workspace @nuvia/vendor-portal dev",
+    "build:vendor-portal": "yarn workspace @nuvia/vendor-portal build",
+    "start:vendor-portal": "yarn workspace @nuvia/vendor-portal start"
+  },
+  "devDependencies": {
+    "prettier": "2.2.1",
+    "rimraf": "3.0.2"
+  },
+  "lint-staged": {}
+}

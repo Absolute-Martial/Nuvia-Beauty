@@ -1,0 +1,83 @@
+# Dependencies and build output
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+out/
+build/
+coverage/
+**/tsconfig.tsbuildinfo
+**/.phpunit.result.cache
+
+# Environment files
+.env
+**/.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.dokploy.example
+!.env.docker.example
+
+# Generated or local artifacts
+.DS_Store
+**/.DS_Store
+*.log
+*.pem
+__pycache__/
+workbox-*.js
+sw.js
+**/public/sw.js
+
+# Docs, submission files, and non-source root artifacts
+*.pdf
+*.docx
+install.sh
+babel.config.js
+yarn.lock
+!yarn.lock
+documentation.pdf
+Zyro_Beauty_Intelligence_Proposal_Final_Patched.docx
+
+# Project automation and editor directories
+deployment/
+**/deployment/
+scripts/
+**/scripts/
+.agents/
+**/.agents/
+.codex/
+**/.codex/
+.husky/
+**/.husky/
+.vscode/
+**/.vscode/
+
+# Legacy demo and fixture data we do not want in the clean history
+backend-engine/public/sql/
+backend-engine/packages/marvel/stubs/
+backend-engine/install.sh
+backend-engine/yarn.lock
+backend-engine/vendor/
+
+# Checked-in docs
+!docs/
+!docs/**
+!**/docs/
+!**/docs/**
+
+# AIStor local assets and secrets
+docker/aistor/dev/data/*
+!docker/aistor/dev/data/.gitkeep
+docker/aistor/dev/certs/*
+!docker/aistor/dev/certs/.gitkeep
+docker/aistor/dev/minio.license
+docker/aistor/dev/root_user
+docker/aistor/dev/root_password
+docker/aistor/production/data/*
+!docker/aistor/production/data/.gitkeep
+docker/aistor/production/certs/*
+!docker/aistor/production/certs/.gitkeep
+docker/aistor/production/secrets/*
+!docker/aistor/production/secrets/.gitkeep
+!docker/aistor/production/secrets/*.example

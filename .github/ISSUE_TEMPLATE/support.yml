@@ -1,0 +1,36 @@
+name: "❓ Question & Support"
+description: Ask a question, seek help, or request general troubleshooting.
+title: "[Question]: "
+labels: ["question", "support"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before submitting this request, please make sure to search the documentation and existing discussions!
+        We highly recommend using GitHub Discussions for questions, but you may use this form if discussions are not active or you have a specific inquiry.
+  - type: textarea
+    id: question
+    attributes:
+      label: What is your question or problem?
+      description: Provide a detailed summary of what you are trying to achieve and where you are stuck.
+      placeholder: Write your question or support request here...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Info
+      description: If relevant, provide system and version information.
+      placeholder: |
+        - OS/Environment:
+        - Version:
+    validations:
+      required: false
+  - type: textarea
+    id: attempts
+    attributes:
+      label: What have you tried so far?
+      description: List any solutions or steps you have already tried.
+      placeholder: Describe your debugging steps or what documentation pages you have reviewed...
+    validations:
+      required: false

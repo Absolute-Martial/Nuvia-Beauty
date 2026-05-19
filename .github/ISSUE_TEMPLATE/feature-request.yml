@@ -1,0 +1,51 @@
+name: "💡 Feature Request"
+description: Propose a new feature, enhancement, or idea for the project.
+title: "[Feature]: "
+labels: ["enhancement", "proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature! Please provide as much details as possible about the use case and expected outcome.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your feature request related to a problem?
+      description: A clear and concise description of what the problem is. (e.g. "I am frustrated when...")
+      placeholder: Describe the problem or challenge you face...
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Describe the solution you'd like
+      description: A clear and concise description of what you want to happen.
+      placeholder: Describe your proposed feature or enhancement...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Describe alternatives you've considered
+      description: A clear and concise description of any alternative solutions or features you've considered.
+      placeholder: What other ways have you tried or thought of to address this?
+    validations:
+      required: false
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other context, mockup designs, screenshots, or diagrams of the feature.
+      placeholder: Add any design references, sketches, or other details here...
+    validations:
+      required: false
+  - type: checkboxes
+    id: validations
+    attributes:
+      label: Guidelines Verification
+      description: Please verify the following before submitting.
+      options:
+        - label: I searched existing feature requests to ensure this is not a duplicate.
+          required: true
+        - label: I am willing to contribute or help test this feature if needed.
+          required: false

@@ -1,0 +1,120 @@
+name: nuvia-beauty
+
+x-backend-env: &backend_env
+  APP_NAME: Nuvia Beauty
+  APP_ENV: production
+  APP_DEBUG: "false"
+  APP_URL: ${APP_URL:-http://localhost:8000}
+  APP_KEY: ${APP_KEY:?APP_KEY is required}
+  DB_CONNECTION: mysql
+  DB_HOST: db
+  DB_PORT: 3306
+  DB_DATABASE: ${DB_DATABASE:-nuvia_beauty}
+  DB_USERNAME: ${DB_USERNAME:-nuvia_beauty}
+  DB_PASSWORD: ${DB_PASSWORD:-nuvia_beauty}
+  CACHE_DRIVER: ${CACHE_DRIVER:-redis}
+  QUEUE_CONNECTION: ${QUEUE_CONNECTION:-redis}
+  SESSION_DRIVER: ${SESSION_DRIVER:-redis}
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+  FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3003}
+  ADMIN_URL: ${ADMIN_URL:-http://localhost:3002}
+  VENDOR_URL: ${VENDOR_URL:-http://localhost:3004}
+  FILESYSTEM_DISK: ${FILESYSTEM_DISK:-local}
+  FILESYSTEM_CLOUD: ${FILESYSTEM_CLOUD:-s3}
+  IMPORT_FILESYSTEM_DISK: ${IMPORT_FILESYSTEM_DISK:-local}
+  MEDIA_DISK: ${MEDIA_DISK:-public}
+  AISTOR_ACCESS_KEY_ID: ${AISTOR_ACCESS_KEY_ID:-}
+  AISTOR_SECRET_ACCESS_KEY: ${AISTOR_SECRET_ACCESS_KEY:-}
+  AISTOR_REGION: ${AISTOR_REGION:-us-east-1}
+  AISTOR_BUCKET: ${AISTOR_BUCKET:-}
+  AISTOR_PUBLIC_URL: ${AISTOR_PUBLIC_URL:-}
+  AISTOR_ENDPOINT: ${AISTOR_ENDPOINT:-}
+  AISTOR_USE_PATH_STYLE_ENDPOINT: ${AISTOR_USE_PATH_STYLE_ENDPOINT:-false}
+  AISTOR_BUCKET_ENDPOINT: ${AISTOR_BUCKET_ENDPOINT:-false}
+  AISTOR_ROOT_PREFIX: ${AISTOR_ROOT_PREFIX:-}
+
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-nuvia_beauty}
+      MYSQL_USER: ${DB_USERNAME:-nuvia_beauty}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-nuvia_beauty}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-nuvia_beauty_root}
+      MYSQL_ALLOW_EMPTY_PASSWORD: "no"
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  backend:
+    image: ${NUVIA_BACKEND_IMAGE:-nuvia-beauty-backend:local}
+    restart: unless-stopped
+    depends_on:
+      - db
+      - redis
+    environment:
+      <<: *backend_env
+    ports:
+      - "8000:8000"
+    networks:
+      - nuvia_beauty_net
+
+  admin:
+    image: ${NUVIA_ADMIN_IMAGE:-nuvia-beauty-admin-panel:local}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_REST_API_ENDPOINT: ${NEXT_PUBLIC_REST_API_ENDPOINT:-http://backend:8000}
+      NEXT_PUBLIC_SHOP_URL: ${NEXT_PUBLIC_SHOP_URL:-http://localhost:3003}
+      NEXT_PUBLIC_VENDOR_URL: ${NEXT_PUBLIC_VENDOR_URL:-http://localhost:3004}
+    ports:
+      - "3002:3002"
+    networks:
+      - nuvia_beauty_net
+
+  vendor:
+    image: ${NUVIA_VENDOR_IMAGE:-nuvia-beauty-vendor-portal:local}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_REST_API_ENDPOINT: ${NEXT_PUBLIC_REST_API_ENDPOINT:-http://backend:8000}
+      NEXT_PUBLIC_SHOP_URL: ${NEXT_PUBLIC_SHOP_URL:-http://localhost:3003}
+      NEXT_PUBLIC_VENDOR_URL: ${NEXT_PUBLIC_VENDOR_URL:-http://localhost:3004}
+    ports:
+      - "3004:3004"
+    networks:
+      - nuvia_beauty_net
+
+  storefront:
+    image: ${NUVIA_STOREFRONT_IMAGE:-nuvia-beauty-storefront:local}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_REST_API_ENDPOINT: ${NEXT_PUBLIC_REST_API_ENDPOINT:-http://backend:8000}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3003}
+    ports:
+      - "3003:3003"
+    networks:
+      - nuvia_beauty_net
+
+volumes:
+  db_data:
+  redis_data:
+
+networks:
+  nuvia_beauty_net:
+    name: nuvia-beauty-net

@@ -1,0 +1,47 @@
+{
+    "name": "kodeine/laravel-meta",
+    "version": "2.2.6",
+    "description": "Fluent Meta Data for Eloquent Models, as if it is a property on your model.",
+    "keywords": [
+        "laravel",
+        "meta",
+        "metas",
+        "meta data",
+        "data",
+        "metadata",
+        "metable",
+        "model",
+        "eloquent",
+        "kodeine"
+    ],
+    "authors": [
+        {
+            "name": "Ahsen M.",
+            "homepage": "https://github.com/kodeine",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "illuminate/support": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/events": "^13.0",
+        "ext-json": "*"
+    },
+    "autoload": {
+        "classmap": [],
+        "psr-0": {
+            "Kodeine\\Metable\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Kodeine\\Metable\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "stable",
+    "license": "MIT",
+    "require-dev": {
+        "phpunit/phpunit": "^12.0"
+    }
+}

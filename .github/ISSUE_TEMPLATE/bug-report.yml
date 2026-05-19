@@ -1,0 +1,77 @@
+name: "🐛 Bug Report"
+description: File a structured bug report to help us identify and resolve issues.
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting this issue! Please provide as much detail as possible to help us reproduce and fix it.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Provide a clear and concise description of the bug.
+      placeholder: Describe what the issue is...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: List the step-by-step actions required to reproduce the bug.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '....'
+        3. Scroll down to '....'
+        4. See error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: Describe what you expected to happen.
+      placeholder: What should have happened...
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: Describe what actually happened, including any error messages.
+      placeholder: What actually happened (include logs or output if possible)...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Info
+      description: Provide system, runtime, and package version details.
+      placeholder: |
+        - OS: (e.g. Ubuntu 22.04, macOS Sonoma, Windows 11)
+        - Node Version: (e.g. v20.11.0)
+        - Browser/Client: (e.g. Chrome 120, Postman, curl)
+        - Services/Stack: (e.g. Laravel 11, Next.js 14, Docker)
+    validations:
+      required: true
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other context, files, screenshots, or logs that might help.
+      placeholder: Paste logs, paste error traces, or drag-and-drop screenshots here...
+    validations:
+      required: false
+  - type: checkboxes
+    id: validations
+    attributes:
+      label: Guidelines Verification
+      description: Please verify the following before submitting.
+      options:
+        - label: I have searched existing issues to ensure this is not a duplicate.
+          required: true
+        - label: I have read the project's Contributing Guidelines.
+          required: true
+        - label: I verified that this bug is reproducible in the latest version.
+          required: true

@@ -1,0 +1,10 @@
+# GitHub Issue Templates Configuration
+blank_issues_enabled: false
+
+contact_links:
+  - name: Ask a Question / Get Support
+    url: https://github.com/lets-smile/zyro-fashion/discussions
+    about: Please use Discussions for questions, support, and general troubleshooting.
+  - name: Contributor Guidelines
+    url: https://github.com/lets-smile/zyro-fashion/blob/main/CONTRIBUTING.md
+    about: Read our contributing guidelines before submitting issues or pull requests.

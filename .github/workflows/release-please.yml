@@ -1,0 +1,27 @@
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - production
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    name: Release Please
+    runs-on: ubuntu-latest
+    steps:
+      - name: Release Please Action
+        uses: google-github-actions/release-please-action@v4
+        with:
+          # Customize these settings for your specific project
+          release-type: node
+          # To use custom config or multi-component (monorepo) setups,
+          # create a release-please-config.json and .release-please-manifest.json
+          # config-file: release-please-config.json
+          # manifest-file: .release-please-manifest.json

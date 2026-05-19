@@ -1,0 +1,93 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release, for example v0.1.0-preview"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Create GitHub release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Resolve release tag
+        id: tag
+        shell: bash
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          if [[ ! "${TAG}" =~ ^v ]]; then
+            echo "Release tag must start with v, got ${TAG}" >&2
+            exit 1
+          fi
+          echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
+
+      - name: Build release notes
+        id: notes
+        shell: bash
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          OWNER_LC="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          BACKEND_IMAGE="ghcr.io/${OWNER_LC}/nuvia-beauty-backend:${TAG}"
+          ADMIN_IMAGE="ghcr.io/${OWNER_LC}/nuvia-beauty-admin-panel:${TAG}"
+          VENDOR_IMAGE="ghcr.io/${OWNER_LC}/nuvia-beauty-vendor-portal:${TAG}"
+          STOREFRONT_IMAGE="ghcr.io/${OWNER_LC}/nuvia-beauty-storefront:${TAG}"
+
+          cat > release-notes.md <<EOF
+          # Nuvia Beauty ${TAG}
+
+          Nuvia Beauty is a multivendor AI beauty commerce platform built on the Zyro Fashion base.
+
+          ## Highlights
+
+          - Customer storefront
+          - Separate admin panel
+          - Vendor portal
+          - Docker Compose quickstart
+          - GHCR backend/admin/vendor/storefront image support
+
+          ## Docker images
+
+          Backend:
+          ${BACKEND_IMAGE}
+
+          Admin:
+          ${ADMIN_IMAGE}
+
+          Vendor:
+          ${VENDOR_IMAGE}
+
+          Storefront:
+          ${STOREFRONT_IMAGE}
+          EOF
+
+      - name: Create or update GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: Nuvia Beauty ${{ steps.tag.outputs.tag }}
+          body_path: release-notes.md
+          draft: false
+          prerelease: ${{ contains(steps.tag.outputs.tag, 'preview') || contains(steps.tag.outputs.tag, 'alpha') || contains(steps.tag.outputs.tag, 'beta') || contains(steps.tag.outputs.tag, 'rc') }}

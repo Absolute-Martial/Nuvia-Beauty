@@ -1,0 +1,6 @@
+.git
+vendor
+storage
+bootstrap/cache
+.env
+*.log

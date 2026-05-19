@@ -1,0 +1,42 @@
+name: "📖 Documentation or Wiki Request"
+description: Propose an addition, correction, or update to the project's documentation or wiki.
+title: "[Wiki]: "
+labels: ["documentation", "wiki"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to request new wiki articles, report spelling errors, or suggest improvements to existing architectural documentation.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary of the request
+      description: What documentation needs to be added, changed, or removed?
+      placeholder: Describe the requested documentation changes...
+    validations:
+      required: true
+  - type: text
+    id: target-page
+    attributes:
+      label: Target Page/URL
+      description: Link to the existing wiki page or folder that requires editing (if applicable).
+      placeholder: "e.g. /docs/4-System-Views/Deployment-View.md"
+    validations:
+      required: false
+  - type: textarea
+    id: content
+    attributes:
+      label: Proposed content or improvements
+      description: Write down the text you would like to see added, or highlight changes to make.
+      placeholder: Draft the new documentation content, add bullet points, or list the specific corrections...
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched the existing wiki to verify this isn't already covered.
+          required: true
+        - label: I am willing to write the draft content myself and submit a PR.
+          required: false
