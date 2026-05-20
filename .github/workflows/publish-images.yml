@@ -53,6 +53,43 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Detect synced branch alias tags
+        id: branch-alias
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "extra_tags=" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          mapfile -t REMOTE_REFS < <(git ls-remote --heads origin development production)
+          development_sha=""
+          production_sha=""
+
+          for line in "${REMOTE_REFS[@]}"; do
+            sha="${line%%$'\t'*}"
+            ref="${line##*$'\t'}"
+
+            case "${ref}" in
+              refs/heads/development)
+                development_sha="${sha}"
+                ;;
+              refs/heads/production)
+                production_sha="${sha}"
+                ;;
+            esac
+          done
+
+          extra_tags=""
+
+          if [ "${GITHUB_REF_NAME}" = "development" ] && [ -n "${production_sha}" ] && [ "${production_sha}" = "${GITHUB_SHA}" ]; then
+            extra_tags="type=raw,value=production"
+          elif [ "${GITHUB_REF_NAME}" = "production" ] && [ -n "${development_sha}" ] && [ "${development_sha}" = "${GITHUB_SHA}" ]; then
+            extra_tags="type=raw,value=development"
+          fi
+
+          echo "extra_tags=${extra_tags}" >> "${GITHUB_OUTPUT}"
+
       - name: Detect image rebuild scope
         id: changed
         shell: bash
@@ -180,6 +217,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ github.ref_name == github.event.repository.default_branch }}
+            ${{ steps.branch-alias.outputs.extra_tags }}
 
       - name: Extract admin image metadata
         id: meta-admin
@@ -199,6 +237,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ github.ref_name == github.event.repository.default_branch }}
+            ${{ steps.branch-alias.outputs.extra_tags }}
 
       - name: Extract vendor image metadata
         id: meta-vendor
@@ -218,6 +257,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ github.ref_name == github.event.repository.default_branch }}
+            ${{ steps.branch-alias.outputs.extra_tags }}
 
       - name: Extract storefront image metadata
         id: meta-storefront
@@ -237,6 +277,7 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ github.ref_name == github.event.repository.default_branch }}
+            ${{ steps.branch-alias.outputs.extra_tags }}
 
       - name: Build and push backend image
         uses: docker/build-push-action@v6
