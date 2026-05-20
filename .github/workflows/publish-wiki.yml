@@ -53,8 +53,8 @@ jobs:
       - name: Sync assembled docs to wiki
         shell: bash
         run: |
-          wiki_url="https://github.com/${GITHUB_REPOSITORY}.wiki.git"
-          if ! git ls-remote "https://x-access-token:${WIKI_SYNC_SECRET}@github.com/${GITHUB_REPOSITORY}.wiki.git" HEAD >/dev/null 2>&1; then
+          wiki_url="https://github.com/Absolute-Martial/Nuvia-Beauty.wiki.git"
+          if ! git ls-remote "https://x-access-token:${WIKI_SYNC_SECRET}@${wiki_url#https://}" HEAD >/dev/null 2>&1; then
             echo "::error::GitHub wiki is not initialized yet. Open the Wiki tab in GitHub, create the first page once, then rerun this workflow."
             echo "::error::Wiki URL checked: ${wiki_url}"
             exit 1
