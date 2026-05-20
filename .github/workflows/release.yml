@@ -50,10 +50,10 @@ jobs:
         run: |
           TAG="${{ steps.tag.outputs.tag }}"
           OWNER_LC="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
-          BACKEND_IMAGE="ghcr.io/${OWNER_LC}/nuvia-beauty-backend:${TAG}"
-          ADMIN_IMAGE="ghcr.io/${OWNER_LC}/nuvia-beauty-admin-panel:${TAG}"
-          VENDOR_IMAGE="ghcr.io/${OWNER_LC}/nuvia-beauty-vendor-portal:${TAG}"
-          STOREFRONT_IMAGE="ghcr.io/${OWNER_LC}/nuvia-beauty-storefront:${TAG}"
+          BACKEND_IMAGE="ghcr.io/${OWNER_LC}/nuvia-beauty/backend:${TAG}"
+          ADMIN_IMAGE="ghcr.io/${OWNER_LC}/nuvia-beauty/admin-panel:${TAG}"
+          VENDOR_IMAGE="ghcr.io/${OWNER_LC}/nuvia-beauty/vendor-portal:${TAG}"
+          STOREFRONT_IMAGE="ghcr.io/${OWNER_LC}/nuvia-beauty/storefront:${TAG}"
 
           cat > release-notes.md <<EOF
           # Nuvia Beauty ${TAG}
