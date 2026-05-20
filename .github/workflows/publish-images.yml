@@ -53,6 +53,64 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Detect image rebuild scope
+        id: changed
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "backend=true" >> "${GITHUB_OUTPUT}"
+            echo "admin=true" >> "${GITHUB_OUTPUT}"
+            echo "vendor=true" >> "${GITHUB_OUTPUT}"
+            echo "storefront=true" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          BEFORE_SHA="${{ github.event.before }}"
+          if [ -z "${BEFORE_SHA}" ] || [ "${BEFORE_SHA}" = "0000000000000000000000000000000000000000" ]; then
+            echo "backend=true" >> "${GITHUB_OUTPUT}"
+            echo "admin=true" >> "${GITHUB_OUTPUT}"
+            echo "vendor=true" >> "${GITHUB_OUTPUT}"
+            echo "storefront=true" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          mapfile -t CHANGED_FILES < <(git diff --name-only "${BEFORE_SHA}" "${GITHUB_SHA}")
+          backend=false
+          admin=false
+          vendor=false
+          storefront=false
+
+          for file in "${CHANGED_FILES[@]}"; do
+            case "${file}" in
+              backend-engine/*|.github/workflows/publish-images.yml)
+                backend=true
+                ;;
+            esac
+
+            case "${file}" in
+              admin-panel/*|package.json|yarn.lock|.yarnrc|.nvmrc|.github/workflows/publish-images.yml)
+                admin=true
+                ;;
+            esac
+
+            case "${file}" in
+              vendor-portal/*|package.json|yarn.lock|.yarnrc|.nvmrc|.github/workflows/publish-images.yml)
+                vendor=true
+                ;;
+            esac
+
+            case "${file}" in
+              storefront/*|package.json|yarn.lock|.yarnrc|.nvmrc|.github/workflows/publish-images.yml)
+                storefront=true
+                ;;
+            esac
+          done
+
+          echo "backend=${backend}" >> "${GITHUB_OUTPUT}"
+          echo "admin=${admin}" >> "${GITHUB_OUTPUT}"
+          echo "vendor=${vendor}" >> "${GITHUB_OUTPUT}"
+          echo "storefront=${storefront}" >> "${GITHUB_OUTPUT}"
+
       - name: Validate GHCR publish token
         shell: bash
         env:
@@ -101,6 +159,7 @@ jobs:
       - name: Extract backend image metadata
         id: meta-backend
         uses: docker/metadata-action@v5
+        if: steps.changed.outputs.backend == 'true'
         with:
           images: ${{ steps.images.outputs.backend_image }}
           labels: |
@@ -119,6 +178,7 @@ jobs:
       - name: Extract admin image metadata
         id: meta-admin
         uses: docker/metadata-action@v5
+        if: steps.changed.outputs.admin == 'true'
         with:
           images: ${{ steps.images.outputs.admin_image }}
           labels: |
@@ -137,6 +197,7 @@ jobs:
       - name: Extract vendor image metadata
         id: meta-vendor
         uses: docker/metadata-action@v5
+        if: steps.changed.outputs.vendor == 'true'
         with:
           images: ${{ steps.images.outputs.vendor_image }}
           labels: |
@@ -155,6 +216,7 @@ jobs:
       - name: Extract storefront image metadata
         id: meta-storefront
         uses: docker/metadata-action@v5
+        if: steps.changed.outputs.storefront == 'true'
         with:
           images: ${{ steps.images.outputs.storefront_image }}
           labels: |
@@ -172,6 +234,7 @@ jobs:
 
       - name: Build and push backend image
         uses: docker/build-push-action@v6
+        if: steps.changed.outputs.backend == 'true'
         with:
           context: ./backend-engine
           file: ./backend-engine/Dockerfile
@@ -183,6 +246,7 @@ jobs:
 
       - name: Build and push admin image
         uses: docker/build-push-action@v6
+        if: steps.changed.outputs.admin == 'true'
         with:
           context: .
           file: ./admin-panel/Dockerfile
@@ -194,6 +258,7 @@ jobs:
 
       - name: Build and push vendor image
         uses: docker/build-push-action@v6
+        if: steps.changed.outputs.vendor == 'true'
         with:
           context: .
           file: ./vendor-portal/Dockerfile
@@ -205,6 +270,7 @@ jobs:
 
       - name: Build and push storefront image
         uses: docker/build-push-action@v6
+        if: steps.changed.outputs.storefront == 'true'
         with:
           context: .
           file: ./storefront/Dockerfile
@@ -248,21 +314,21 @@ jobs:
             echo
             echo "Backend image:"
             echo '```text'
-            echo "${{ steps.images.outputs.backend_image }}"
+            if [ "${{ steps.changed.outputs.backend }}" = "true" ]; then echo "${{ steps.images.outputs.backend_image }}"; else echo "Skipped"; fi
             echo '```'
             echo
             echo "Admin image:"
             echo '```text'
-            echo "${{ steps.images.outputs.admin_image }}"
+            if [ "${{ steps.changed.outputs.admin }}" = "true" ]; then echo "${{ steps.images.outputs.admin_image }}"; else echo "Skipped"; fi
             echo '```'
             echo
             echo "Vendor image:"
             echo '```text'
-            echo "${{ steps.images.outputs.vendor_image }}"
+            if [ "${{ steps.changed.outputs.vendor }}" = "true" ]; then echo "${{ steps.images.outputs.vendor_image }}"; else echo "Skipped"; fi
             echo '```'
             echo
             echo "Storefront image:"
             echo '```text'
-            echo "${{ steps.images.outputs.storefront_image }}"
+            if [ "${{ steps.changed.outputs.storefront }}" = "true" ]; then echo "${{ steps.images.outputs.storefront_image }}"; else echo "Skipped"; fi
             echo '```'
           } >> "${GITHUB_STEP_SUMMARY}"
