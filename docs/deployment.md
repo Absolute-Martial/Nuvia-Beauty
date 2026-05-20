@@ -57,7 +57,7 @@ Production compose uses the same AIStor pattern, but you should bind real host p
 - `AISTOR_CERTS_DIR`
 
 Use [`.env.docker.example`](../.env.docker.example) as the starting point for a compose-driven deployment outside Dokploy.
-If GHCR pushes are denied by the default `GITHUB_TOKEN`, add a repository secret named `GHCR_TOKEN` with `write:packages` access and the workflow will use it automatically.
+The image publishing workflow requires a repository secret named `GHCR_TOKEN`. Use a GitHub token that can write packages for `Absolute-Martial`, such as a classic token with `write:packages` and `read:packages` or an equivalent fine-grained token. If the token owner is different from the repository owner, also add `GHCR_USERNAME` with that GitHub username.
 
 ## Dokploy
 
