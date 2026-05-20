@@ -58,19 +58,23 @@ jobs:
         shell: bash
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            echo "backend=true" >> "${GITHUB_OUTPUT}"
-            echo "admin=true" >> "${GITHUB_OUTPUT}"
-            echo "vendor=true" >> "${GITHUB_OUTPUT}"
-            echo "storefront=true" >> "${GITHUB_OUTPUT}"
+            {
+              echo "backend=true"
+              echo "admin=true"
+              echo "vendor=true"
+              echo "storefront=true"
+            } >> "${GITHUB_OUTPUT}"
             exit 0
           fi
 
           BEFORE_SHA="${{ github.event.before }}"
           if [ -z "${BEFORE_SHA}" ] || [ "${BEFORE_SHA}" = "0000000000000000000000000000000000000000" ]; then
-            echo "backend=true" >> "${GITHUB_OUTPUT}"
-            echo "admin=true" >> "${GITHUB_OUTPUT}"
-            echo "vendor=true" >> "${GITHUB_OUTPUT}"
-            echo "storefront=true" >> "${GITHUB_OUTPUT}"
+            {
+              echo "backend=true"
+              echo "admin=true"
+              echo "vendor=true"
+              echo "storefront=true"
+            } >> "${GITHUB_OUTPUT}"
             exit 0
           fi
 
@@ -106,10 +110,12 @@ jobs:
             esac
           done
 
-          echo "backend=${backend}" >> "${GITHUB_OUTPUT}"
-          echo "admin=${admin}" >> "${GITHUB_OUTPUT}"
-          echo "vendor=${vendor}" >> "${GITHUB_OUTPUT}"
-          echo "storefront=${storefront}" >> "${GITHUB_OUTPUT}"
+          {
+            echo "backend=${backend}"
+            echo "admin=${admin}"
+            echo "vendor=${vendor}"
+            echo "storefront=${storefront}"
+          } >> "${GITHUB_OUTPUT}"
 
       - name: Validate GHCR publish token
         shell: bash
