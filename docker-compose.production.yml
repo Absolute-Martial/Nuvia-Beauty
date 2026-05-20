@@ -178,6 +178,7 @@ services:
     depends_on:
       - backend
     environment:
+      INTERNAL_REST_API_ENDPOINT: http://backend:8000
       NEXT_PUBLIC_REST_API_ENDPOINT: ${NEXT_PUBLIC_REST_API_ENDPOINT:?NEXT_PUBLIC_REST_API_ENDPOINT is required}
       NEXT_PUBLIC_SHOP_URL: ${NEXT_PUBLIC_SHOP_URL:?NEXT_PUBLIC_SHOP_URL is required}
       NEXT_PUBLIC_VENDOR_URL: ${NEXT_PUBLIC_VENDOR_URL:?NEXT_PUBLIC_VENDOR_URL is required}
@@ -193,6 +194,7 @@ services:
     depends_on:
       - backend
     environment:
+      INTERNAL_REST_API_ENDPOINT: http://backend:8000
       NEXT_PUBLIC_REST_API_ENDPOINT: ${NEXT_PUBLIC_REST_API_ENDPOINT:?NEXT_PUBLIC_REST_API_ENDPOINT is required}
       NEXT_PUBLIC_SHOP_URL: ${NEXT_PUBLIC_SHOP_URL:?NEXT_PUBLIC_SHOP_URL is required}
       NEXT_PUBLIC_VENDOR_URL: ${NEXT_PUBLIC_VENDOR_URL:?NEXT_PUBLIC_VENDOR_URL is required}
@@ -208,6 +210,7 @@ services:
     depends_on:
       - backend
     environment:
+      INTERNAL_REST_API_ENDPOINT: http://backend:8000
       NEXT_PUBLIC_REST_API_ENDPOINT: ${NEXT_PUBLIC_REST_API_ENDPOINT:?NEXT_PUBLIC_REST_API_ENDPOINT is required}
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?NEXT_PUBLIC_SITE_URL is required}
     ports:

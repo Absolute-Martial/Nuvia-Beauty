@@ -9,6 +9,12 @@ const withPWA = require('next-pwa')({
   runtimeCaching,
 });
 
+const backendOrigin =
+  process.env.INTERNAL_REST_API_ENDPOINT ||
+  (process.env.NODE_ENV === 'development'
+    ? 'http://127.0.0.1:8000'
+    : 'http://backend:8000');
+
 module.exports = withPWA({
   outputFileTracingRoot: path.join(__dirname, '..'),
   i18n,
@@ -16,7 +22,7 @@ module.exports = withPWA({
     return [
       {
         source: '/api-backend/:path*',
-        destination: 'http://127.0.0.1:8000/:path*',
+        destination: `${backendOrigin}/:path*`,
       },
     ];
   },

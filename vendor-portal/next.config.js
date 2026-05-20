@@ -3,6 +3,12 @@ const path = require('path');
 
 const { i18n } = require('./next-i18next.config');
 
+const backendOrigin =
+  process.env.INTERNAL_REST_API_ENDPOINT ||
+  (process.env.NODE_ENV === 'development'
+    ? 'http://127.0.0.1:8000'
+    : 'http://backend:8000');
+
 // const runtimeCaching = require('next-pwa/cache');
 // const withPWA = require('next-pwa')({
 //   disable: process.env.NODE_ENV === 'development',
@@ -14,6 +20,14 @@ const nextConfig = {
   reactStrictMode: true,
   outputFileTracingRoot: path.join(__dirname, '..'),
   i18n,
+  async rewrites() {
+    return [
+      {
+        source: '/api-backend/:path*',
+        destination: `${backendOrigin}/:path*`,
+      },
+    ];
+  },
   images: {
     domains: [
       'via.placeholder.com',

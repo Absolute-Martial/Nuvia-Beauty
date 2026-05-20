@@ -3,12 +3,22 @@ import Cookies from 'js-cookie';
 import Router from 'next/router';
 import invariant from 'tiny-invariant';
 
+const isBrowser = typeof window !== 'undefined';
 invariant(
-  process.env.NEXT_PUBLIC_REST_API_ENDPOINT,
-  'NEXT_PUBLIC_REST_API_ENDPOINT is not defined, please define it in your .env file',
+  isBrowser ||
+    process.env.INTERNAL_REST_API_ENDPOINT ||
+    process.env.NEXT_PUBLIC_REST_API_ENDPOINT,
+  'Set INTERNAL_REST_API_ENDPOINT or NEXT_PUBLIC_REST_API_ENDPOINT for vendor requests.',
 );
+
+const apiBaseURL = isBrowser
+  ? '/api-backend'
+  : process.env.INTERNAL_REST_API_ENDPOINT ||
+    process.env.NEXT_PUBLIC_REST_API_ENDPOINT ||
+    'http://127.0.0.1:8000';
+
 const Axios = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_REST_API_ENDPOINT,
+  baseURL: apiBaseURL,
   timeout: 50000,
   headers: {
     'Content-Type': 'application/json',
