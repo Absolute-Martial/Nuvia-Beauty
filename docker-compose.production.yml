@@ -32,6 +32,12 @@ x-backend-env: &backend_env
   AISTOR_BUCKET_ENDPOINT: ${AISTOR_BUCKET_ENDPOINT:-false}
   AISTOR_ROOT_PREFIX: ${AISTOR_ROOT_PREFIX:-}
 
+x-default-logging: &default_logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   db:
     image: mysql:8.0
@@ -177,6 +183,22 @@ services:
     networks:
       - nuvia_beauty_net
 
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    logging: *default_logging
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?CLOUDFLARE_TUNNEL_TOKEN is required}
+    command:
+      - tunnel
+      - --no-autoupdate
+      - run
+    networks:
+      - nuvia_beauty_net
+      - dokploy-network
+    security_opt:
+      - no-new-privileges:true
+
 volumes:
   db_data:
   redis_data:
@@ -184,3 +206,5 @@ volumes:
 networks:
   nuvia_beauty_net:
     name: nuvia-beauty-net
+  dokploy-network:
+    external: true

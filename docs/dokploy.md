@@ -59,6 +59,10 @@ You can generate these files interactively with [create_aistor_files.py](../crea
 
 Use [`.env.dokploy.example`](../.env.dokploy.example) as the starting point for the Dokploy app environment.
 
+## Cloudflare Tunnel
+
+The production compose file includes a `cloudflared` service. Add `CLOUDFLARE_TUNNEL_TOKEN` in Dokploy when you want Cloudflare to route traffic into the compose network. The service joins both `nuvia-beauty-net` and Dokploy's external `dokploy-network`.
+
 ## Notes
 
 - Keep the AIStor license file out of Git.
