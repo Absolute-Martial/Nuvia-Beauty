@@ -1,4 +1,64 @@
+name: nuvia-beauty
+
+x-backend-env: &backend_env
+  APP_NAME: Nuvia Beauty
+  APP_ENV: production
+  APP_DEBUG: "false"
+  APP_URL: ${APP_URL:?APP_URL is required}
+  APP_KEY: ${APP_KEY:?APP_KEY is required}
+  DB_CONNECTION: ${DB_CONNECTION:-mysql}
+  DB_HOST: ${DB_HOST:-db}
+  DB_PORT: ${DB_PORT:-3306}
+  DB_DATABASE: ${DB_DATABASE:-nuvia_beauty}
+  DB_USERNAME: ${DB_USERNAME:-nuvia_beauty}
+  DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+  CACHE_DRIVER: ${CACHE_DRIVER:-redis}
+  QUEUE_CONNECTION: ${QUEUE_CONNECTION:-redis}
+  SESSION_DRIVER: ${SESSION_DRIVER:-redis}
+  REDIS_HOST: ${REDIS_HOST:-redis}
+  REDIS_PORT: ${REDIS_PORT:-6379}
+  FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL is required}
+  ADMIN_URL: ${ADMIN_URL:?ADMIN_URL is required}
+  VENDOR_URL: ${VENDOR_URL:?VENDOR_URL is required}
+  FILESYSTEM_DISK: ${FILESYSTEM_DISK:-s3}
+  FILESYSTEM_CLOUD: ${FILESYSTEM_CLOUD:-s3}
+  IMPORT_FILESYSTEM_DISK: ${IMPORT_FILESYSTEM_DISK:-s3}
+  MEDIA_DISK: ${MEDIA_DISK:-s3}
+  AISTOR_REGION: ${AISTOR_REGION:-us-east-1}
+  AISTOR_BUCKET: ${AISTOR_BUCKET:-nuvia-public}
+  AISTOR_PUBLIC_URL: ${AISTOR_PUBLIC_URL:?AISTOR_PUBLIC_URL is required}
+  AISTOR_ENDPOINT: ${AISTOR_ENDPOINT:-http://aistor:9000}
+  AISTOR_USE_PATH_STYLE_ENDPOINT: ${AISTOR_USE_PATH_STYLE_ENDPOINT:-true}
+  AISTOR_BUCKET_ENDPOINT: ${AISTOR_BUCKET_ENDPOINT:-false}
+  AISTOR_ROOT_PREFIX: ${AISTOR_ROOT_PREFIX:-}
+
 services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-nuvia_beauty}
+      MYSQL_USER: ${DB_USERNAME:-nuvia_beauty}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is required}
+      MYSQL_ALLOW_EMPTY_PASSWORD: "no"
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - nuvia_beauty_net
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - nuvia_beauty_net
+
   aistor:
     image: quay.io/minio/aistor/minio:latest
     pull_policy: always
@@ -10,11 +70,11 @@ services:
       - "${AISTOR_API_PORT:-9000}:9000"
       - "${AISTOR_CONSOLE_PORT:-9001}:9001"
     volumes:
-      - ${AISTOR_DATA_DIR:-./docker/aistor/production/data}:/mnt/data
-      - ${AISTOR_CERTS_DIR:-./docker/aistor/production/certs}:/etc/minio/certs
-      - ${AISTOR_LICENSE_FILE:-./docker/aistor/production/secrets/minio.license}:/run/secrets/aistor_license:ro
-      - ${AISTOR_ROOT_USER_FILE:-./docker/aistor/production/secrets/root_user}:/run/secrets/root_user:ro
-      - ${AISTOR_ROOT_PASSWORD_FILE:-./docker/aistor/production/secrets/root_password}:/run/secrets/root_password:ro
+      - ${AISTOR_DATA_DIR:?AISTOR_DATA_DIR is required}:/mnt/data
+      - ${AISTOR_CERTS_DIR:?AISTOR_CERTS_DIR is required}:/etc/minio/certs
+      - ${AISTOR_LICENSE_FILE:?AISTOR_LICENSE_FILE is required}:/run/secrets/aistor_license:ro
+      - ${AISTOR_ROOT_USER_FILE:?AISTOR_ROOT_USER_FILE is required}:/run/secrets/root_user:ro
+      - ${AISTOR_ROOT_PASSWORD_FILE:?AISTOR_ROOT_PASSWORD_FILE is required}:/run/secrets/root_password:ro
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9000/minio/health/live || exit 1"]
       interval: 10s
@@ -37,30 +97,27 @@ services:
         mc mb --ignore-existing local/${AISTOR_BUCKET:-nuvia-public} &&
         mc anonymous set download local/${AISTOR_BUCKET:-nuvia-public}
     volumes:
-      - ${AISTOR_ROOT_USER_FILE:-./docker/aistor/production/secrets/root_user}:/run/secrets/root_user:ro
-      - ${AISTOR_ROOT_PASSWORD_FILE:-./docker/aistor/production/secrets/root_password}:/run/secrets/root_password:ro
+      - ${AISTOR_ROOT_USER_FILE:?AISTOR_ROOT_USER_FILE is required}:/run/secrets/root_user:ro
+      - ${AISTOR_ROOT_PASSWORD_FILE:?AISTOR_ROOT_PASSWORD_FILE is required}:/run/secrets/root_password:ro
     restart: "no"
     networks:
       - nuvia_beauty_net
 
   backend:
+    image: ${NUVIA_BACKEND_IMAGE:?NUVIA_BACKEND_IMAGE is required}
     pull_policy: always
+    restart: unless-stopped
     depends_on:
+      db:
+        condition: service_started
+      redis:
+        condition: service_started
       aistor:
         condition: service_healthy
       aistor-setup:
         condition: service_completed_successfully
     environment:
-      FILESYSTEM_DISK: s3
-      FILESYSTEM_CLOUD: s3
-      MEDIA_DISK: s3
-      IMPORT_FILESYSTEM_DISK: s3
-      AISTOR_REGION: ${AISTOR_REGION:-us-east-1}
-      AISTOR_BUCKET: ${AISTOR_BUCKET:-nuvia-public}
-      AISTOR_ENDPOINT: http://aistor:9000
-      AISTOR_PUBLIC_URL: ${AISTOR_PUBLIC_URL:-http://localhost:9000/${AISTOR_BUCKET:-nuvia-public}}
-      AISTOR_USE_PATH_STYLE_ENDPOINT: "true"
-      AISTOR_BUCKET_ENDPOINT: "false"
+      <<: *backend_env
     command:
       - /bin/sh
       - -c
@@ -69,25 +126,60 @@ services:
         export AISTOR_SECRET_ACCESS_KEY="$$(cat /run/secrets/root_password)";
         php artisan serve --host=0.0.0.0 --port=8000
     volumes:
-      - ${AISTOR_ROOT_USER_FILE:-./docker/aistor/production/secrets/root_user}:/run/secrets/root_user:ro
-      - ${AISTOR_ROOT_PASSWORD_FILE:-./docker/aistor/production/secrets/root_password}:/run/secrets/root_password:ro
+      - ${AISTOR_ROOT_USER_FILE:?AISTOR_ROOT_USER_FILE is required}:/run/secrets/root_user:ro
+      - ${AISTOR_ROOT_PASSWORD_FILE:?AISTOR_ROOT_PASSWORD_FILE is required}:/run/secrets/root_password:ro
+    ports:
+      - "8000:8000"
     networks:
       - nuvia_beauty_net
 
   admin:
+    image: ${NUVIA_ADMIN_IMAGE:?NUVIA_ADMIN_IMAGE is required}
     pull_policy: always
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_REST_API_ENDPOINT: ${NEXT_PUBLIC_REST_API_ENDPOINT:?NEXT_PUBLIC_REST_API_ENDPOINT is required}
+      NEXT_PUBLIC_SHOP_URL: ${NEXT_PUBLIC_SHOP_URL:?NEXT_PUBLIC_SHOP_URL is required}
+      NEXT_PUBLIC_VENDOR_URL: ${NEXT_PUBLIC_VENDOR_URL:?NEXT_PUBLIC_VENDOR_URL is required}
+    ports:
+      - "3002:3002"
     networks:
       - nuvia_beauty_net
 
   vendor:
+    image: ${NUVIA_VENDOR_IMAGE:?NUVIA_VENDOR_IMAGE is required}
     pull_policy: always
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_REST_API_ENDPOINT: ${NEXT_PUBLIC_REST_API_ENDPOINT:?NEXT_PUBLIC_REST_API_ENDPOINT is required}
+      NEXT_PUBLIC_SHOP_URL: ${NEXT_PUBLIC_SHOP_URL:?NEXT_PUBLIC_SHOP_URL is required}
+      NEXT_PUBLIC_VENDOR_URL: ${NEXT_PUBLIC_VENDOR_URL:?NEXT_PUBLIC_VENDOR_URL is required}
+    ports:
+      - "3004:3004"
     networks:
       - nuvia_beauty_net
 
   storefront:
+    image: ${NUVIA_STOREFRONT_IMAGE:?NUVIA_STOREFRONT_IMAGE is required}
     pull_policy: always
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_REST_API_ENDPOINT: ${NEXT_PUBLIC_REST_API_ENDPOINT:?NEXT_PUBLIC_REST_API_ENDPOINT is required}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?NEXT_PUBLIC_SITE_URL is required}
+    ports:
+      - "3003:3003"
     networks:
       - nuvia_beauty_net
+
+volumes:
+  db_data:
+  redis_data:
 
 networks:
   nuvia_beauty_net:

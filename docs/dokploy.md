@@ -9,12 +9,11 @@ Dokploy is a good fit for this repo because it handles:
 
 ## Deployment Model
 
-Use the production compose overlay:
+Use the standalone production compose file:
 
-- `docker-compose.yml`
 - `docker-compose.production.yml`
 
-In Dokploy, define the runtime env vars and mount the host files for AIStor.
+In Dokploy, set the compose file path to `./docker-compose.production.yml`, define the runtime env vars, and mount the host files for AIStor through the env paths.
 
 ## Image Variables
 
