@@ -19,8 +19,13 @@ class SettingsSeeder extends Seeder
      */
     public function run()
     {
+        $language = DEFAULT_LANGUAGE ?? "en";
+        $now = Carbon::now();
+
         // run your app seeder
-        DB::table('settings')->insert([
+        DB::table('settings')->updateOrInsert([
+            'language' => $language,
+        ], [
             'options' => json_encode([
                 "seo" => [
                     'ogImage' => null,
@@ -147,9 +152,9 @@ class SettingsSeeder extends Seeder
                 ...$this->maintenanceSettings(),
                 ...$this->promoPopupSettings(),
             ]),
-            "language" => DEFAULT_LANGUAGE ?? "en",
-            "created_at" => Carbon::now(),
-            "updated_at" => Carbon::now(),
+            "language" => $language,
+            "created_at" => $now,
+            "updated_at" => $now,
         ]);
     }
 
