@@ -35,10 +35,10 @@ concurrency:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
   REGISTRY: ghcr.io
-  BACKEND_IMAGE_NAME: nuvia-beauty/backend
-  ADMIN_IMAGE_NAME: nuvia-beauty/admin-panel
-  VENDOR_IMAGE_NAME: nuvia-beauty/vendor-portal
-  STOREFRONT_IMAGE_NAME: nuvia-beauty/storefront
+  BACKEND_IMAGE_NAME: nuvia-beauty-backend
+  ADMIN_IMAGE_NAME: nuvia-beauty-admin-panel
+  VENDOR_IMAGE_NAME: nuvia-beauty-vendor-portal
+  STOREFRONT_IMAGE_NAME: nuvia-beauty-storefront
 
 jobs:
   publish:

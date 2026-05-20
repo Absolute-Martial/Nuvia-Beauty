@@ -27,10 +27,10 @@ Set these to the GHCR refs you want Dokploy to run:
 Example:
 
 ```env
-NUVIA_BACKEND_IMAGE=ghcr.io/absolute-martial/nuvia-beauty/backend:development
-NUVIA_ADMIN_IMAGE=ghcr.io/absolute-martial/nuvia-beauty/admin-panel:development
-NUVIA_VENDOR_IMAGE=ghcr.io/absolute-martial/nuvia-beauty/vendor-portal:development
-NUVIA_STOREFRONT_IMAGE=ghcr.io/absolute-martial/nuvia-beauty/storefront:development
+NUVIA_BACKEND_IMAGE=ghcr.io/absolute-martial/nuvia-beauty-backend:development
+NUVIA_ADMIN_IMAGE=ghcr.io/absolute-martial/nuvia-beauty-admin-panel:development
+NUVIA_VENDOR_IMAGE=ghcr.io/absolute-martial/nuvia-beauty-vendor-portal:development
+NUVIA_STOREFRONT_IMAGE=ghcr.io/absolute-martial/nuvia-beauty-storefront:development
 ```
 
 ## AIStor Files
