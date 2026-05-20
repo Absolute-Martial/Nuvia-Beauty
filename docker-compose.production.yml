@@ -81,11 +81,6 @@ services:
       - ${AISTOR_LICENSE_FILE:?AISTOR_LICENSE_FILE is required}:/run/secrets/aistor_license:ro
       - ${AISTOR_ROOT_USER_FILE:?AISTOR_ROOT_USER_FILE is required}:/run/secrets/root_user:ro
       - ${AISTOR_ROOT_PASSWORD_FILE:?AISTOR_ROOT_PASSWORD_FILE is required}:/run/secrets/root_password:ro
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9000/minio/health/live || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 6
     networks:
       - nuvia_beauty_net
 
@@ -94,12 +89,12 @@ services:
     pull_policy: always
     depends_on:
       aistor:
-        condition: service_healthy
+        condition: service_started
     entrypoint:
       - /bin/sh
       - -c
       - >
-        mc alias set local http://aistor:9000 "$$(cat /run/secrets/root_user)" "$$(cat /run/secrets/root_password)" &&
+        until mc alias set local http://aistor:9000 "$$(cat /run/secrets/root_user)" "$$(cat /run/secrets/root_password)"; do sleep 2; done &&
         mc mb --ignore-existing local/${AISTOR_BUCKET:-nuvia-public} &&
         mc anonymous set download local/${AISTOR_BUCKET:-nuvia-public}
     volumes:
@@ -119,7 +114,7 @@ services:
       redis:
         condition: service_started
       aistor:
-        condition: service_healthy
+        condition: service_started
       aistor-setup:
         condition: service_completed_successfully
     environment:
