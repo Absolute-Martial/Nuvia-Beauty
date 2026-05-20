@@ -217,13 +217,27 @@ jobs:
       - name: Validate compose with published image refs
         env:
           APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          APP_URL: https://api.example.test
+          FRONTEND_URL: https://shop.example.test
+          ADMIN_URL: https://admin.example.test
+          VENDOR_URL: https://vendor.example.test
           DB_PASSWORD: ci-placeholder-password
           DB_ROOT_PASSWORD: ci-placeholder-root-password
+          AISTOR_PUBLIC_URL: https://assets.example.test/nuvia-public
+          AISTOR_DATA_DIR: /tmp/nuvia/aistor/data
+          AISTOR_CERTS_DIR: /tmp/nuvia/aistor/certs
+          AISTOR_LICENSE_FILE: /tmp/nuvia/aistor/license/minio.license
+          AISTOR_ROOT_USER_FILE: /tmp/nuvia/aistor/secrets/root_user
+          AISTOR_ROOT_PASSWORD_FILE: /tmp/nuvia/aistor/secrets/root_password
           NUVIA_BACKEND_IMAGE: ${{ steps.images.outputs.backend_sha_ref }}
           NUVIA_ADMIN_IMAGE: ${{ steps.images.outputs.admin_sha_ref }}
           NUVIA_VENDOR_IMAGE: ${{ steps.images.outputs.vendor_sha_ref }}
           NUVIA_STOREFRONT_IMAGE: ${{ steps.images.outputs.storefront_sha_ref }}
-        run: docker compose config > /tmp/nuvia-beauty.compose.rendered.yml
+          NEXT_PUBLIC_REST_API_ENDPOINT: https://api.example.test
+          NEXT_PUBLIC_SITE_URL: https://shop.example.test
+          NEXT_PUBLIC_SHOP_URL: https://shop.example.test
+          NEXT_PUBLIC_VENDOR_URL: https://vendor.example.test
+        run: docker compose -f docker-compose.production.yml config > /tmp/nuvia-beauty.compose.rendered.yml
 
       - name: Publish image summary
         shell: bash
