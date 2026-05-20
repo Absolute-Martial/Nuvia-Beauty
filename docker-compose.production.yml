@@ -104,6 +104,35 @@ services:
     networks:
       - nuvia_beauty_net
 
+  backend-init:
+    image: ${NUVIA_BACKEND_IMAGE:?NUVIA_BACKEND_IMAGE is required}
+    pull_policy: always
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_started
+      redis:
+        condition: service_started
+      aistor:
+        condition: service_started
+      aistor-setup:
+        condition: service_completed_successfully
+    environment:
+      <<: *backend_env
+    command:
+      - /bin/sh
+      - -c
+      - >
+        export AISTOR_ACCESS_KEY_ID="$$(cat /run/secrets/root_user)";
+        export AISTOR_SECRET_ACCESS_KEY="$$(cat /run/secrets/root_password)";
+        php artisan migrate --force &&
+        php artisan db:seed --class='\Marvel\Database\Seeders\SettingsSeeder' --force
+    volumes:
+      - ${AISTOR_ROOT_USER_FILE:?AISTOR_ROOT_USER_FILE is required}:/run/secrets/root_user:ro
+      - ${AISTOR_ROOT_PASSWORD_FILE:?AISTOR_ROOT_PASSWORD_FILE is required}:/run/secrets/root_password:ro
+    networks:
+      - nuvia_beauty_net
+
   backend:
     image: ${NUVIA_BACKEND_IMAGE:?NUVIA_BACKEND_IMAGE is required}
     pull_policy: always
@@ -116,6 +145,8 @@ services:
       aistor:
         condition: service_started
       aistor-setup:
+        condition: service_completed_successfully
+      backend-init:
         condition: service_completed_successfully
     environment:
       <<: *backend_env
