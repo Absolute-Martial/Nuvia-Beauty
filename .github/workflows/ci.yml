@@ -146,10 +146,10 @@ jobs:
       AISTOR_ROOT_USER_FILE: /tmp/nuvia/aistor/secrets/root_user
       AISTOR_ROOT_PASSWORD_FILE: /tmp/nuvia/aistor/secrets/root_password
       CLOUDFLARE_TUNNEL_TOKEN: ci-placeholder-token
-      NUVIA_BACKEND_IMAGE: ghcr.io/absolute-martial/nuvia-beauty-backend:development
-      NUVIA_ADMIN_IMAGE: ghcr.io/absolute-martial/nuvia-beauty-admin-panel:development
-      NUVIA_VENDOR_IMAGE: ghcr.io/absolute-martial/nuvia-beauty-vendor-portal:development
-      NUVIA_STOREFRONT_IMAGE: ghcr.io/absolute-martial/nuvia-beauty-storefront:development
+      NUVIA_BACKEND_IMAGE: ghcr.io/absolute-martial/nuvia-beauty/backend:development
+      NUVIA_ADMIN_IMAGE: ghcr.io/absolute-martial/nuvia-beauty/admin-panel:development
+      NUVIA_VENDOR_IMAGE: ghcr.io/absolute-martial/nuvia-beauty/vendor-portal:development
+      NUVIA_STOREFRONT_IMAGE: ghcr.io/absolute-martial/nuvia-beauty/storefront:development
       NEXT_PUBLIC_REST_API_ENDPOINT: https://api.example.test
       NEXT_PUBLIC_SITE_URL: https://shop.example.test
       NEXT_PUBLIC_SHOP_URL: https://shop.example.test
