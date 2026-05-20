@@ -229,6 +229,7 @@ jobs:
           AISTOR_LICENSE_FILE: /tmp/nuvia/aistor/license/minio.license
           AISTOR_ROOT_USER_FILE: /tmp/nuvia/aistor/secrets/root_user
           AISTOR_ROOT_PASSWORD_FILE: /tmp/nuvia/aistor/secrets/root_password
+          CLOUDFLARE_TUNNEL_TOKEN: ci-placeholder-token
           NUVIA_BACKEND_IMAGE: ${{ steps.images.outputs.backend_sha_ref }}
           NUVIA_ADMIN_IMAGE: ${{ steps.images.outputs.admin_sha_ref }}
           NUVIA_VENDOR_IMAGE: ${{ steps.images.outputs.vendor_sha_ref }}
