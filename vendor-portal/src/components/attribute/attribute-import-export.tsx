@@ -3,6 +3,7 @@ import { DownloadIcon } from '@/components/icons/download-icon';
 import { useTranslation } from 'next-i18next/pages';
 import ImportAttributes from '@/components/attribute/import-attributes';
 import { useModalState } from '@/components/ui/modal/modal.context';
+import { getApiUrl } from '@/data/client/api-base-url';
 
 const AttributeExportImport = () => {
   const { t } = useTranslation();
@@ -20,7 +21,7 @@ const AttributeExportImport = () => {
       <div className="grid grid-cols-2 gap-5 md:grid-cols-3">
         <ImportAttributes />
         <a
-          href={`${process?.env?.NEXT_PUBLIC_REST_API_ENDPOINT}/export-attributes/${shopId}`}
+          href={getApiUrl(`/export-attributes/${shopId}`)}
           target="_blank"
           rel={'noreferrer'}
           className="flex h-36 cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed border-border-base p-5 focus:border-accent-400 focus:outline-none"

@@ -14,6 +14,7 @@ import Image from 'next/image';
 import { BkashIcon } from '@/components/icons/payment-gateways/bkash';
 import { PaymongoIcon } from '@/components/icons/payment-gateways/paymongo';
 import { FlutterwaveIcon } from '@/components/icons/payment-gateways/flutterwave';
+import { getApiUrl } from '@/data/client/api-base-url';
 
 interface WebHookURLProps {
   gateway: gatewayType;
@@ -41,9 +42,7 @@ const WebHookURL = ({ gateway }: WebHookURLProps) => {
     paymongo: <PaymongoIcon className="h-4 w-auto" />,
     flutterwave: <FlutterwaveIcon className="h-4 w-auto" />,
   };
-  const url = `${
-    process.env.NEXT_PUBLIC_REST_API_ENDPOINT
-  }/webhooks/${gateway?.name?.toLowerCase()}`;
+  const url = getApiUrl(`/webhooks/${gateway?.name?.toLowerCase()}`);
 
   setTimeout(() => {
     setCopied(false);

@@ -4,6 +4,7 @@ import { useModalState } from '@/components/ui/modal/modal.context';
 import { useTranslation } from 'next-i18next/pages';
 import ImportProducts from './import-products';
 import ImportVariationOptions from './import-variation-options';
+import { getApiUrl } from '@/data/client/api-base-url';
 
 const ExportImportView = () => {
   const { data: shopId } = useModalState();
@@ -25,7 +26,7 @@ const ExportImportView = () => {
         <ImportVariationOptions />
 
         <a
-          href={`${process?.env?.NEXT_PUBLIC_REST_API_ENDPOINT}/export-products/${shopId}`}
+          href={getApiUrl(`/export-products/${shopId}`)}
           target="_blank"
           className="flex h-36 cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed border-border-base p-5 focus:border-accent-400 focus:outline-none"
           rel="noreferrer"
@@ -38,7 +39,7 @@ const ExportImportView = () => {
         </a>
 
         <a
-          href={`${process?.env?.NEXT_PUBLIC_REST_API_ENDPOINT}/export-variation-options/${shopId}`}
+          href={getApiUrl(`/export-variation-options/${shopId}`)}
           target="_blank"
           className="flex h-36 cursor-pointer flex-col items-center justify-center rounded border-2 border-dashed border-border-base p-5 focus:border-accent-400 focus:outline-none"
           rel="noreferrer"

@@ -2,6 +2,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import Router from 'next/router';
 import invariant from 'tiny-invariant';
+import { getApiBaseUrl } from './api-base-url';
 
 const isBrowser = typeof window !== 'undefined';
 invariant(
@@ -11,11 +12,7 @@ invariant(
   'Set INTERNAL_REST_API_ENDPOINT or NEXT_PUBLIC_REST_API_ENDPOINT for vendor requests.',
 );
 
-const apiBaseURL = isBrowser
-  ? '/api-backend'
-  : process.env.INTERNAL_REST_API_ENDPOINT ||
-    process.env.NEXT_PUBLIC_REST_API_ENDPOINT ||
-    'http://127.0.0.1:8000';
+const apiBaseURL = getApiBaseUrl();
 
 const Axios = axios.create({
   baseURL: apiBaseURL,
