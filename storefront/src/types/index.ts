@@ -13,6 +13,39 @@ export interface QueryOptions {
   limit?: number;
 }
 
+export type BeautyRecommendationInput = {
+  session_id?: string;
+  skin_type_tags: string[];
+  tone_tags: string[];
+  undertone_tags: string[];
+  concern_tags: string[];
+  ingredient_tags?: string[];
+  avoid_tags?: string[];
+  limit?: number;
+};
+
+export type BeautyRecommendationItem = {
+  product_id: number;
+  score: number;
+  confidence: 'low' | 'medium' | 'high';
+  reasons: string[];
+  warnings: string[];
+  breakdown: Record<string, number>;
+  product?: {
+    id: number;
+    name?: string;
+    slug?: string;
+    image?: Attachment;
+    shop_id?: number;
+  };
+};
+
+export type BeautyRecommendationResponse = {
+  data: {
+    recommendations: BeautyRecommendationItem[];
+  };
+};
+
 export interface GetParams {
   slug: string;
   language?: string;

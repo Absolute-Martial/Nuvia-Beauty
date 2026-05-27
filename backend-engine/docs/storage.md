@@ -1,269 +1,179 @@
 # Backend Storage
 
-Storage documentation for `backend-engine` in the Nuvia Beauty `development` branch.
+Current storage documentation for `backend-engine` on the `development` branch.
 
 ## Current status
 
-Current backend filesystem configuration lives in:
+Phase 4 storage foundation is implemented in:
 
 ```text
 backend-engine/config/filesystems.php
+backend-engine/app/Domains/Storage/
+backend-engine/routes/api/v1/storage.php
 ```
 
-Current default disk:
+The backend now uses a provider-neutral S3-compatible contract while keeping the older AIStor/AWS variables as compatibility fallbacks.
 
-```php
-'default' => env('FILESYSTEM_DISK', 'local')
-```
+## Current environment contract
 
-Current `.env.example` value:
-
-```env
-FILESYSTEM_DISK=local
-```
-
-## Current configured disks
-
-| Disk | Driver | Root/bucket | Visibility | Status |
-|---|---|---|---|---|
-| `local` | `local` | `storage_path('app')` | Private by convention | Current |
-| `public` | `local` | `storage_path('app/public')` | Public | Current |
-| `s3` | `s3` | `AWS_BUCKET` | Public | Current, generic/public-oriented |
-
-Current `s3` disk variables:
-
-```env
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_DEFAULT_REGION=
-AWS_BUCKET=
-AWS_URL=
-AWS_ENDPOINT=
-```
-
-These variables are not currently listed in `backend-engine/.env.example`.
-
-## Current S3 dependency
-
-The backend includes:
-
-```json
-"league/flysystem-aws-s3-v3": "^3.30"
-```
-
-This enables Laravel filesystem support for AWS S3 and S3-compatible providers when disks are configured.
-
-## Current storage paths
-
-`backend-engine/.env.example` currently includes local path-style variables:
-
-```env
-STYLEFIT_SETTINGS_PATH=storage/app/private/zyro/settings/zyro.settings.json
-STYLEFIT_TRYON_SOURCE_PATH=storage/app/private/zyro/try-on/source-photos
-STYLEFIT_TRYON_RESULT_PATH=storage/app/private/zyro/try-on/results
-```
-
-These are current configuration paths. They are not S3-compatible storage abstractions yet.
-
-## Planned storage direction
-
-Not implemented yet.
-
-Target storage contract:
-
-```text
-Application contract: S3-compatible object storage
-Preferred self-hosted provider: MinIO AIStor
-Alternative provider: AWS S3 or compatible provider
-```
-
-The application should not hardcode MinIO-only logic in controllers or business workflows.
-
-Correct direction:
-
-```text
-Controller -> Storage service -> Laravel disk -> configured S3-compatible endpoint
-```
-
-Incorrect direction:
-
-```text
-Controller -> hardcoded MinIO URL/access key/bucket
-```
-
-## Planned disk model
-
-Not implemented yet.
-
-Recommended Laravel disks:
-
-```text
-s3_public
-s3_beauty_inputs
-s3_beauty_results
-s3_beauty_calibration
-```
-
-| Disk | Visibility | Purpose |
-|---|---|---|
-| `s3_public` | Public | Product images, shop logos, banners, public UI assets. |
-| `s3_beauty_inputs` | Private | Customer/source photos for analysis workflows. |
-| `s3_beauty_results` | Private | Generated result images and overlays. |
-| `s3_beauty_calibration` | Private | Explicit opt-in calibration images. |
-
-## Planned environment variables
-
-Not implemented yet.
-
-Recommended backend variables:
+Primary storage variables:
 
 ```env
 STORAGE_DRIVER=s3_compatible
 S3_PROVIDER=minio_aistor
-S3_ENDPOINT=http://minio:9000
+S3_ENDPOINT=
 S3_REGION=us-east-1
 S3_ACCESS_KEY_ID=
 S3_SECRET_ACCESS_KEY=
 S3_USE_PATH_STYLE_ENDPOINT=true
-
 S3_PUBLIC_BUCKET=nuvia-public-assets
 S3_BEAUTY_INPUTS_BUCKET=nuvia-private-beauty-inputs
 S3_BEAUTY_RESULTS_BUCKET=nuvia-private-beauty-results
 S3_BEAUTY_CALIBRATION_BUCKET=nuvia-private-calibration
-
 S3_UPLOAD_URL_TTL_MINUTES=15
 S3_DOWNLOAD_URL_TTL_MINUTES=60
-S3_SERVER_SIDE_ENCRYPTION=AES256
 ```
 
-## Planned bucket model
-
-Not implemented yet.
-
-| Bucket | Visibility | Stored data |
-|---|---|---|
-| `nuvia-public-assets` | Public/CDN-readable | Product images, shop logos, banners, public UI assets. |
-| `nuvia-private-beauty-inputs` | Private | Captured source photos for provider processing. |
-| `nuvia-private-beauty-results` | Private | Try-on/result/overlay media. |
-| `nuvia-private-calibration` | Private | Explicit opt-in calibration images only. |
-
-## Planned object key format
-
-Use generated IDs and structured prefixes.
+Compatibility fallbacks still supported by config:
 
 ```text
-public/products/{shop_id}/{product_id}/{uuid}.{ext}
-public/shops/{shop_id}/logos/{uuid}.{ext}
-beauty/inputs/{shop_id}/{session_id}/{media_id}/source.{ext}
-beauty/results/{shop_id}/{session_id}/{task_id}/result.{ext}
-beauty/calibration/{profile_id}/{media_id}/calibration.{ext}
-```
-
-Do not use original filenames as object identity.
-
-## Planned upload flow
-
-Not implemented yet.
-
-```text
-1. Frontend requests upload slot from backend.
-2. Backend authenticates actor and validates file purpose.
-3. Backend checks MIME type, size, and ownership/session context.
-4. Backend creates pending media metadata.
-5. Backend returns a short-lived presigned PUT URL.
-6. Browser uploads directly to S3-compatible storage.
-7. Frontend confirms upload with backend.
-8. Backend verifies object exists and marks media confirmed.
-```
-
-## Planned private download flow
-
-Not implemented yet.
-
-```text
-1. Frontend requests private media access.
-2. Backend checks auth and ownership.
-3. Backend returns short-lived signed download URL.
-4. Backend logs access without logging the signed URL.
-5. Browser uses URL temporarily.
-```
-
-## Planned backend service structure
-
-Not implemented yet.
-
-Recommended structure:
-
-```text
-app/Domains/Storage/
-├── Controllers/
-├── DTO/
-├── Jobs/
-├── Policies/
-└── Services/
-```
-
-Alternative for beauty-specific storage:
-
-```text
-app/Domains/Beauty/Storage/
-├── Controllers/
-├── DTO/
-├── Jobs/
-├── Policies/
-└── Services/
-```
-
-## Security rules
-
-Never expose the following to frontend code or API responses:
-
-```text
+AISTOR_ENDPOINT
+AISTOR_ACCESS_KEY_ID
+AISTOR_SECRET_ACCESS_KEY
+AISTOR_REGION
+AISTOR_BUCKET
+AISTOR_PUBLIC_URL
+AISTOR_USE_PATH_STYLE_ENDPOINT
 AWS_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY
-S3_ACCESS_KEY_ID
-S3_SECRET_ACCESS_KEY
-MINIO_ROOT_USER
-MINIO_ROOT_PASSWORD
-Long-lived private object URLs
-Provider API keys
+AWS_DEFAULT_REGION
+AWS_BUCKET
+AWS_ENDPOINT
+AWS_URL
 ```
 
-Private media must not be stored in public buckets.
+## Current disks
 
-## Lifecycle rules
+| Disk | Visibility | Current purpose |
+|---|---|---|
+| `s3` | public | compatibility/public disk |
+| `s3_public` | public | product/shop/public media assets |
+| `s3_beauty_inputs` | private | customer or session-owned beauty input uploads |
+| `s3_beauty_results` | private | generated beauty results |
+| `s3_beauty_calibration` | private | opt-in calibration assets |
 
-Planned retention defaults:
+Rules:
 
-| Asset type | Suggested retention |
-|---|---:|
-| Guest source photo | 24 hours |
-| Saved consultation input | 7 to 30 days |
-| Result image | 30 to 180 days |
-| Calibration image | Explicit opt-in, review every 90 days |
-| Failed temporary artifact | 24 hours |
+- public disk visibility stays `public`
+- beauty disks stay `private`
+- endpoint and path-style behavior come from environment
+- no bucket names or hostnames are hardcoded in controller logic
 
-## Current gaps
+## Current API flow
+
+### Upload slot
+
+Route:
+
+```http
+POST /api/v1/storage/upload-slots
+```
+
+Behavior:
+
+1. authenticates actor
+2. validates purpose, MIME type, size, and owner context
+3. creates a `beauty_media_assets` row with `pending_upload`
+4. generates a short-lived presigned PUT URL
+5. returns object metadata and upload instructions
+
+### Confirm upload
+
+Route:
+
+```http
+POST /api/v1/storage/media/{mediaId}/confirm
+```
+
+Behavior:
+
+1. authorizes the actor with `MediaAssetPolicy`
+2. verifies the object exists on the selected disk
+3. marks the media record `confirmed`
+
+### Signed download
+
+Route:
+
+```http
+GET /api/v1/storage/media/{mediaId}/download-url
+```
+
+Behavior:
+
+1. authorizes the actor
+2. creates a short-lived presigned GET URL
+3. never returns storage credentials
+4. never exposes a permanent private object URL
+
+### Delete or discard
+
+Route:
+
+```http
+DELETE /api/v1/storage/media/{mediaId}
+```
+
+Behavior:
+
+1. authorizes the actor
+2. marks the row `discarded`
+3. dispatches `DeleteExpiredMediaAssets`
+
+## Current object key strategy
+
+Object keys are generated server-side.
+
+Current prefixes:
 
 ```text
-Dedicated S3-compatible disks are not implemented.
-S3-compatible env variables are not yet in .env.example.
-MinIO/AIStor service is not yet in Docker Compose.
-Upload-slot endpoints are not implemented.
-Media metadata table is not implemented.
-Private signed download flow is not implemented.
+public/products/{shop_id}/{owner_id}/{uuid}.{ext}
+beauty/inputs/{shop_id}/{session_id}/{media_id}/source.{ext}
+beauty/results/{shop_id}/{session_id}/{media_id}/result.{ext}
+beauty/calibration/{profile_or_owner_id}/{media_id}/calibration.{ext}
 ```
 
-## Update rule
+The backend does not trust the original file name as object identity.
 
-Update this file when:
+## Current security rules
 
-```text
-config/filesystems.php changes
-.env.example storage variables change
-Docker Compose adds MinIO/AIStor
-new media tables are added
-storage endpoints are added
-frontend upload flow changes
-retention/lifecycle policy changes
-```
+Browser code must never receive:
+
+- S3 or AIStor access keys
+- root credentials
+- provider keys
+- long-lived private object URLs
+
+Protected behavior stays backend-only:
+
+- disk selection
+- object key generation
+- ownership checks
+- signed URL generation
+- deletion orchestration
+
+## Current limitations
+
+Implemented now:
+
+- metadata creation
+- presigned upload
+- object existence confirmation
+- signed private download
+- discard and delete job
+
+Not yet implemented:
+
+- scheduler wiring for periodic expired-media cleanup
+- audit event table for media access
+- bucket lifecycle policies managed from code

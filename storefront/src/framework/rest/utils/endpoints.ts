@@ -52,4 +52,5 @@ export const API_ENDPOINTS = {
   USERS_UPDATE_EMAIL: '/update-email',
   SHOP_MAINTENANCE_EVENT: 'shop-maintenance-event',
   BECAME_SELLER: 'became-seller',
+  BEAUTY_RECOMMENDATIONS_GENERATE: '/v1/beauty/recommendations/generate',
 };

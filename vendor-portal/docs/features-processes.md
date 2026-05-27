@@ -55,6 +55,18 @@ quota overview
 product mapping tools
 ```
 
+## Current Phase 4 vendor support
+
+Phase 4 does not ship a vendor beauty-mapping editor yet.
+
+Current vendor-facing position:
+
+- vendor product ownership is respected by backend mapping authorization
+- mapping creation and updates remain a controlled backend or admin workflow for this phase
+- no storage credentials, media secrets, or provider logic are exposed to the vendor frontend
+
+If ownership-specific vendor editing is needed later, it should build on the existing backend `/api/v1/beauty/product-mappings` authorization model rather than bypassing it in the browser.
+
 ## Maintenance rule
 
 Update this file when vendor-facing features, seller processes, or API consumption flow changes.

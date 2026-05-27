@@ -22,6 +22,7 @@ import isMatch from 'lodash/isMatch';
 import { ROUTES } from '@lib/routes';
 import cn from 'classnames';
 import dynamic from 'next/dynamic';
+import BeautyRecommendationPanel from './beauty-recommendation-panel';
 const FavoriteButton = dynamic(
   () => import('@components/product/favorite-button'),
   {
@@ -463,6 +464,9 @@ const ProductSingleDetails: React.FC<Props> = ({ product }: any) => {
             </li>
           </ul>
         </div>
+      </div>
+      <div className="col-span-full">
+        <BeautyRecommendationPanel product={product} />
       </div>
     </div>
   );

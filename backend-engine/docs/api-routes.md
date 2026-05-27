@@ -1,195 +1,270 @@
 # Backend API Routes
 
-Current API route documentation for `backend-engine` in the Nuvia Beauty `development` branch.
+Current backend route documentation for `backend-engine` on the `development` branch.
 
-## Scope of this file
+## Scope
 
-This file documents routes visible in the application-level route file:
+This file covers:
 
-```text
-backend-engine/routes/api.php
-```
+- app-level routes in `backend-engine/routes/api.php`
+- the new Phase 4 domain route files under `backend-engine/routes/api/v1/`
 
-Routes registered by installed packages, service providers, or the local `marvel/shop` package may exist outside this file. Document package-provided routes separately when they are audited.
+Package-owned commerce routes registered by `marvel/shop` still exist outside these files and are not re-listed here.
 
-## Current app-level API routes
+## Current app-level route includes
 
-### Authenticated user route
-
-```http
-GET /api/user
-```
-
-Current definition:
-
-```php
-Route::middleware('auth:api')->get('/user', function (Request $request) {
-    return $request->user();
-});
-```
-
-Current behavior:
-
-| Field | Value |
-|---|---|
-| Route file | `routes/api.php` |
-| Middleware | `auth:api` |
-| Response | Authenticated user object from `$request->user()` |
-| Public route | No |
-
-## Current route file imports
-
-Current route file imports:
-
-```php
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-```
-
-## Current API route limitations
-
-Current app-level `routes/api.php` is minimal. It does not yet define:
+`backend-engine/routes/api.php` now owns:
 
 ```text
-/api/v1 routes
-storage upload-slot routes
-beauty media routes
-provider orchestration routes
-health routes
-quota routes
-admin operational routes
+GET  /api/user
+/api/v1/storage/*
+/api/v1/beauty/*
 ```
 
-These may be added later, but they are not currently implemented in the app-level route file.
-
-## Planned route convention
-
-New backend-owned routes should use versioned API prefixes.
-
-Recommended pattern:
+The `/api/v1` includes are loaded from:
 
 ```text
-/api/v1/{domain}/{resource}
+backend-engine/routes/api/v1/storage.php
+backend-engine/routes/api/v1/beauty.php
 ```
 
-Examples for future implementation:
+## Current routes
+
+### Core authenticated route
+
+| Method | Path | Middleware | Status |
+|---|---|---|---|
+| `GET` | `/api/user` | `auth:api` | current |
+
+### Storage routes
+
+Owner domain:
 
 ```text
-/api/v1/storage/upload-slots
-/api/v1/storage/media/{mediaId}/confirm
-/api/v1/storage/media/{mediaId}/download-url
-/api/v1/beauty/sessions
-/api/v1/beauty/analysis/tasks/{taskId}/status
-/api/v1/beauty/profiles/{profileId}
-/api/v1/beauty/recommendations
-/api/v1/admin/storage/health
+App\Domains\Storage
 ```
 
-Do not document planned route examples as current implemented routes.
+| Method | Path | Middleware | Status |
+|---|---|---|---|
+| `POST` | `/api/v1/storage/upload-slots` | `auth:sanctum`, `email.verified` | current |
+| `POST` | `/api/v1/storage/media/{mediaId}/confirm` | `auth:sanctum`, `email.verified` | current |
+| `GET` | `/api/v1/storage/media/{mediaId}/download-url` | `auth:sanctum`, `email.verified` | current |
+| `DELETE` | `/api/v1/storage/media/{mediaId}` | `auth:sanctum`, `email.verified` | current |
 
-## Route ownership rule
+Request responsibilities:
 
-Route files should stay organized by domain as the backend grows.
+- `upload-slots` validates actor, storage purpose, MIME type, size, and owner context.
+- `confirm` verifies the uploaded object exists before marking metadata confirmed.
+- `download-url` authorizes access and returns a short-lived signed URL.
+- `DELETE` marks media discarded and queues deletion work.
 
-Preferred future direction:
+### Beauty mapping routes
+
+Owner domain:
 
 ```text
-routes/api.php                      # high-level includes or minimal core routes
-routes/api/v1/storage.php           # storage/media routes
-routes/api/v1/beauty.php            # beauty domain routes
-routes/api/v1/admin.php             # admin operations routes
+App\Domains\Beauty
 ```
 
-Alternative Laravel grouping inside `routes/api.php` is acceptable for small scopes, but domain route files are preferred once route count grows.
+| Method | Path | Middleware | Status |
+|---|---|---|---|
+| `GET` | `/api/v1/beauty/product-mappings` | none | current |
+| `POST` | `/api/v1/beauty/product-mappings` | `auth:sanctum`, `email.verified` | current |
+| `PUT` | `/api/v1/beauty/product-mappings/{id}` | `auth:sanctum`, `email.verified` | current |
 
-## Middleware rules
+Authorization rule:
 
-Protected routes must use existing authentication middleware. Do not trust frontend-provided user IDs, owner IDs, shop IDs, or role names.
+- writes are limited to super admins, shop owners, or shop staff for the mapped product's shop
 
-Recommended access pattern:
+### Beauty recommendation routes
+
+Owner domain:
 
 ```text
-Auth middleware -> policy/gate/service authorization -> domain service action
+App\Domains\Beauty
 ```
 
-Avoid:
+| Method | Path | Middleware | Status |
+|---|---|---|---|
+| `POST` | `/api/v1/beauty/recommendations/generate` | none, optional auth context | current |
+| `GET` | `/api/v1/beauty/recommendations/{id}` | none, request-level authorization | current |
 
-```text
-Request body owner_id -> direct database/storage action
-```
+Authorization rule:
 
-## Response conventions
+- anonymous recommendation generation may only use `session_id`
+- authenticated users may only target their own `customer_id` and `profile_id`
+- super admins may inspect any recommendation
+- recommendation reads require either matching customer, matching profile, or matching session token
 
-Recommended response envelope for new domain endpoints:
+## Current request shapes
+
+### `POST /api/v1/storage/upload-slots`
+
+Required fields:
 
 ```json
 {
-  "data": {},
-  "meta": {},
-  "message": "Optional human-readable message"
+  "purpose": "beauty_input",
+  "asset_type": "source_photo",
+  "owner_type": "profile",
+  "owner_id": 12,
+  "profile_id": 12,
+  "shop_id": 3,
+  "session_id": "guest-session-123",
+  "file_name": "photo.jpg",
+  "content_type": "image/jpeg",
+  "size_bytes": 523412
 }
 ```
 
-Recommended error response shape:
+Supported content types:
+
+```text
+image/jpeg
+image/png
+image/webp
+image/heic
+image/heif
+application/pdf
+```
+
+Maximum size:
+
+```text
+10 MB
+```
+
+Response shape:
 
 ```json
 {
-  "message": "Validation failed.",
-  "errors": {
-    "field": ["Reason"]
+  "data": {
+    "media_id": 1,
+    "storage_provider": "minio_aistor",
+    "disk_name": "s3_beauty_inputs",
+    "bucket": "nuvia-private-beauty-inputs",
+    "object_key": "beauty/inputs/3/guest-session-123/1/source.jpg",
+    "object_version": null,
+    "upload_url": "https://...",
+    "method": "PUT",
+    "headers": {
+      "Content-Type": "image/jpeg"
+    },
+    "expires_at": "2026-05-28T12:00:00+00:00"
   }
 }
 ```
 
-Use Laravel defaults where appropriate, but keep new APIs predictable for frontend clients.
+### `POST /api/v1/storage/media/{mediaId}/confirm`
 
-## Storage route plan
+Response shape:
 
-Not implemented yet.
-
-Planned routes:
-
-```http
-POST /api/v1/storage/upload-slots
-POST /api/v1/storage/media/{mediaId}/confirm
-GET  /api/v1/storage/media/{mediaId}/download-url
-DELETE /api/v1/storage/media/{mediaId}
+```json
+{
+  "data": {
+    "id": 1,
+    "status": "confirmed"
+  }
+}
 ```
 
-Planned responsibilities:
+### `GET /api/v1/storage/media/{mediaId}/download-url`
 
-| Route | Responsibility |
-|---|---|
-| `POST /upload-slots` | Validate actor/file intent and return short-lived presigned upload URL. |
-| `POST /media/{mediaId}/confirm` | Verify uploaded object exists and mark media confirmed. |
-| `GET /media/{mediaId}/download-url` | Authorize private read and return short-lived signed URL. |
-| `DELETE /media/{mediaId}` | Mark media discarded and queue deletion. |
+Response shape:
 
-## Provider route plan
-
-Not implemented yet.
-
-Future provider routes should not expose provider credentials or raw provider payloads.
-
-Correct flow:
-
-```text
-Frontend request -> backend domain endpoint -> backend job/service -> provider API -> normalized backend response
+```json
+{
+  "data": {
+    "url": "https://...",
+    "expires_at": "2026-05-28T13:00:00+00:00"
+  }
+}
 ```
 
-## Documentation update rule
+### `POST /api/v1/beauty/product-mappings`
 
-When a route is added, changed, moved, deprecated, or removed, update this file in the same commit.
+Request shape:
 
-Required route documentation fields:
-
-```text
-HTTP method
-Path
-Middleware
-Request shape
-Response shape
-Authorization rule
-Owner service/domain
-Current/planned/deprecated status
+```json
+{
+  "product_id": 10,
+  "concern_tags": ["dark-spot", "texture"],
+  "skin_type_tags": ["oily", "combination"],
+  "tone_tags": ["medium"],
+  "undertone_tags": ["warm"],
+  "ingredient_tags": ["niacinamide"],
+  "avoid_tags": ["fragrance"],
+  "explanation_template": "Supports brightening and texture-balancing needs."
+}
 ```
+
+### `POST /api/v1/beauty/recommendations/generate`
+
+Request shape:
+
+```json
+{
+  "session_id": "guest-session-123",
+  "skin_type_tags": ["oily"],
+  "tone_tags": ["medium"],
+  "undertone_tags": ["neutral"],
+  "concern_tags": ["dark-spot", "texture"],
+  "ingredient_tags": ["niacinamide"],
+  "avoid_tags": ["fragrance"],
+  "limit": 4
+}
+```
+
+Response shape:
+
+```json
+{
+  "data": {
+    "recommendations": [
+      {
+        "product_id": 1,
+        "score": 87,
+        "confidence": "high",
+        "reasons": [
+          "Matches oily skin profile",
+          "Targets dark spot concern"
+        ],
+        "warnings": [
+          "Avoid if sensitive to fragrance"
+        ],
+        "breakdown": {
+          "skin_type_match": 1,
+          "tone_match": 0.5,
+          "undertone_match": 0.5,
+          "concern_match": 1,
+          "ingredient_match": 1,
+          "product_tag_signal": 0.5,
+          "avoid_penalty": 1
+        },
+        "product": {
+          "id": 1,
+          "name": "Example Product",
+          "slug": "example-product"
+        }
+      }
+    ]
+  }
+}
+```
+
+## Current security rules
+
+- protected backend logic remains in Laravel only
+- browser clients never receive storage credentials
+- private media reads use signed URLs only
+- recommendation writes do not trust arbitrary `customer_id` or `profile_id`
+- product mapping writes are checked against product shop ownership
+
+## Route maintenance rule
+
+Update this file in the same commit when:
+
+- a Phase 4 route is added or removed
+- route middleware changes
+- request or response shape changes
+- authorization behavior changes

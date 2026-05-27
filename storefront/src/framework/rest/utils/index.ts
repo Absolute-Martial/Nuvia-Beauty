@@ -62,6 +62,8 @@ import {
   ShopMaintenanceEvent,
   QueryOptions,
   BecomeSeller,
+  BeautyRecommendationInput,
+  BeautyRecommendationResponse,
 } from '@type/index';
 
 class Client {
@@ -175,6 +177,14 @@ class Client {
 
     update: (user: UpdateUserInput) =>
       HttpClient.put<User>(`${API_ENDPOINTS.CUSTOMERS}/${user.id}`, user),
+  };
+
+  beauty = {
+    generateRecommendations: (input: BeautyRecommendationInput) =>
+      HttpClient.post<BeautyRecommendationResponse>(
+        API_ENDPOINTS.BEAUTY_RECOMMENDATIONS_GENERATE,
+        input,
+      ),
   };
 
   category = {

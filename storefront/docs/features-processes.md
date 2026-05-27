@@ -16,6 +16,7 @@ customer session-aware views
 PWA-capable frontend
 localized interface support
 backend API consumption
+beauty recommendation request and display UI
 ```
 
 ## Current process flow
@@ -26,6 +27,17 @@ Customer opens storefront
   -> storefront requests data from backend
   -> backend returns data
   -> storefront renders customer-facing views
+```
+
+Phase 4 product recommendation flow:
+
+```text
+Customer opens a product detail page
+  -> storefront renders the beauty recommendation panel
+  -> customer submits skin/tone/concern tags
+  -> storefront calls backend REST endpoint /api/v1/beauty/recommendations/generate
+  -> backend returns score, confidence, reasons, warnings, and product metadata
+  -> storefront renders recommendation cards
 ```
 
 ## Current UI tooling
@@ -50,9 +62,13 @@ NODE_ENV=development -> PWA disabled
 other builds -> PWA plugin active
 ```
 
-## Planned feature notes
+## Current Phase 4 implementation note
 
-Mark unfinished customer and beauty features as planned until components and backend routes exist.
+The recommendation UI is intentionally frontend-only in presentation and backend-only in business logic:
+
+- browser requests use existing REST plumbing
+- no database or provider access exists in the storefront
+- no storage credentials are exposed to the browser bundle
 
 ## Maintenance rule
 

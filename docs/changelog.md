@@ -10,3 +10,14 @@ This file tracks architecture, implementation, and documentation changes for the
 - Documented Dockerfile environment, Next.js configs, and image domain allowlists.
 - Added future guidance for storage architecture (S3-compatible/MinIO/AIStor) and backend API-mediated media flow.
 - Removed old `SERVICE.md` from `admin-panel` and migrated content to structured docs format.
+
+## 2026-05-28
+
+- Implemented the Phase 4 S3-compatible storage foundation in `backend-engine/config/filesystems.php` with `s3_public`, `s3_beauty_inputs`, `s3_beauty_results`, and `s3_beauty_calibration`.
+- Added Phase 4 storage metadata and cleanup domain code under `backend-engine/app/Domains/Storage/`.
+- Added Phase 4 beauty mapping and deterministic recommendation domain code under `backend-engine/app/Domains/Beauty/`.
+- Added new backend migrations for `beauty_media_assets`, `beauty_product_mappings`, and `beauty_recommendations`.
+- Added app-level `/api/v1/storage/*` and `/api/v1/beauty/*` route files.
+- Added a controlled `BeautyProductMappingSeeder` workflow for the first 10 existing products.
+- Added storefront recommendation UI components with score, confidence, reasons, warnings, loading, error, and empty states.
+- Updated root and backend documentation to reflect the current Phase 4 implementation and the controlled admin/vendor mapping workflow.

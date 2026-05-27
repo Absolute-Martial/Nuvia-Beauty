@@ -53,6 +53,21 @@ quota overview
 product mapping tools
 ```
 
+## Current Phase 4 mapping support
+
+Phase 4 does not add a full admin beauty mapping UI yet.
+
+Current support is a controlled backend workflow:
+
+- backend product mapping APIs exist under `/api/v1/beauty/product-mappings`
+- the first 10 available products can be mapped with:
+
+```bash
+php artisan db:seed --class=Database\\Seeders\\BeautyProductMappingSeeder
+```
+
+This keeps the implementation inside the secured Laravel boundary until admin interaction flows are specified more precisely.
+
 ## Maintenance rule
 
 Update this file whenever a new admin process or feature category is added, removed, or renamed.

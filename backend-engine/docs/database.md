@@ -1,131 +1,45 @@
 # Backend Database
 
-Database documentation for `backend-engine` in the Nuvia Beauty `development` branch.
+Current database documentation for `backend-engine` on the `development` branch.
 
-## Scope
+## Current database runtime
 
-The backend owns marketplace data, users, shops, products, product metadata,
-orders, and legacy settings tables.
-
-## Product metadata
-
-Try-on metadata is stored through product metadata where supported:
-
-- `tryOnEnabled`
-- `vtoType`
-- `garmentType`
-- `garmentReferenceImage`
-- `bodyZone`
-- `styleTags`
-
-## Current database service
-
-The Docker Compose database service is MySQL.
-
-| Field | Current value |
-|---|---|
-| Compose service | `db` |
-| Image | `mysql:8.0` |
-| Host port | `3306` |
-| Container data volume | `db_data:/var/lib/mysql` |
-| Backend DB host in Compose | `db` |
-
-## Current Compose database variables
-
-Root `docker-compose.yml` configures MySQL with:
-
-```env
-MYSQL_DATABASE=${DB_DATABASE:-nuvia_beauty}
-MYSQL_USER=${DB_USERNAME:-nuvia_beauty}
-MYSQL_PASSWORD=${DB_PASSWORD:-nuvia_beauty}
-MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD:-nuvia_beauty_root}
-MYSQL_ALLOW_EMPTY_PASSWORD=no
-```
-
-The backend connects with:
-
-```env
-DB_CONNECTION=mysql
-DB_HOST=db
-DB_PORT=3306
-DB_DATABASE=${DB_DATABASE:-nuvia_beauty}
-DB_USERNAME=${DB_USERNAME:-nuvia_beauty}
-DB_PASSWORD=${DB_PASSWORD:-nuvia_beauty}
-```
-
-## Current `.env.example` database defaults
-
-`backend-engine/.env.example` currently uses:
-
-```env
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=stylefit
-DB_USERNAME=stylefit
-DB_PASSWORD=
-DB_SOCKET=
-```
-
-This is different from Docker Compose production-like defaults. Keep this difference visible when debugging local database connection issues.
-
-## Data ownership rule
-
-Only `backend-engine` should access MySQL.
-
-Correct:
+Primary runtime:
 
 ```text
-Frontend -> backend API -> MySQL
+MySQL 8.0
 ```
 
-Incorrect:
+Current backend connection pattern:
 
 ```text
-Frontend -> MySQL
+backend-engine -> Laravel models/services -> MySQL
 ```
 
-## Current persistence ownership
+Frontend apps must not connect to the database directly.
 
-Current backend package dependency includes:
+## Current Phase 4 tables
+
+### `beauty_media_assets`
+
+Migration:
 
 ```text
-marvel/shop dev-main
+database/migrations/2026_05_28_000001_create_beauty_media_assets_table.php
 ```
 
-The local `marvel/shop` package likely owns much of the commerce data model. New Nuvia-specific backend tables should be documented here when added.
+Purpose:
 
-## Migration rules
+- stores upload ownership and object metadata only
+- does not store raw file bytes
 
-Use Laravel migrations for schema changes.
-
-Rules:
-
-```text
-Every new table must have a migration.
-Every schema change must be reversible where practical.
-Do not modify production data manually as the primary migration strategy.
-Do not store raw file bytes in MySQL.
-Store object metadata only for uploaded files.
-```
-
-## Planned media metadata table
-
-Not implemented yet.
-
-Recommended future table:
-
-```text
-beauty_media_assets
-```
-
-Recommended fields:
+Current fields:
 
 ```text
 id
-session_id
-profile_id
-shop_id
+session_id nullable
+profile_id nullable
+shop_id nullable
 owner_type
 owner_id
 asset_type
@@ -133,125 +47,170 @@ storage_provider
 disk_name
 bucket
 object_key
-object_version
+object_version nullable
 content_type
 size_bytes
-checksum_sha256
+checksum_sha256 nullable
 visibility
-encryption_mode
 status
-expires_at
-discarded_at
-deleted_at
+expires_at nullable
+discarded_at nullable
+deleted_at nullable
 created_at
 updated_at
 ```
 
-Purpose:
+Current indexes:
 
 ```text
-Store file metadata and ownership only. Never store image/file bytes.
-```
-
-## Planned beauty/domain tables
-
-Not implemented yet.
-
-Future beauty module tables may include:
-
-```text
-beauty_profiles
-beauty_profile_snapshots
-beauty_sessions
-beauty_media_assets
-beauty_ai_tasks
-beauty_analysis_results
-beauty_product_mappings
-beauty_recommendations
-beauty_product_effect_logs
-beauty_quota_accounts
-beauty_quota_events
-audit_logs
-```
-
-Do not treat these as current tables until migrations exist in the repository.
-
-## Transaction rule
-
-Use database transactions when multiple database changes must succeed or fail together.
-
-Examples:
-
-```text
-reserve quota + create AI task
-store provider result + mark task complete
-create media metadata + create audit event
-mark media discarded + queue delete job record
-```
-
-Do not hold a database transaction open during long external calls:
-
-```text
-object storage uploads
-provider API calls
-slow HTTP requests
-queue worker polling
-```
-
-## Indexing rules
-
-New tables should define indexes around actual query paths.
-
-Likely indexes for future media/task tables:
-
-```text
-owner_type + owner_id
 session_id
 profile_id
 shop_id
 status
+owner_type + owner_id
+disk_name + bucket
 expires_at
-provider_task_id
+```
+
+Current status values used by code:
+
+```text
+pending_upload
+confirmed
+discarded
+expired
+deleted
+delete_failed
+```
+
+### `beauty_product_mappings`
+
+Migration:
+
+```text
+database/migrations/2026_05_28_000002_create_beauty_product_mappings_table.php
+```
+
+Purpose:
+
+- stores beauty-oriented product matching metadata
+- remains attached to existing commerce `products`
+
+Current fields:
+
+```text
+id
+product_id
+concern_tags JSON nullable
+skin_type_tags JSON nullable
+tone_tags JSON nullable
+undertone_tags JSON nullable
+ingredient_tags JSON nullable
+avoid_tags JSON nullable
+explanation_template nullable
 created_at
+updated_at
 ```
 
-## Sensitive data rule
-
-Avoid storing secrets or high-risk raw data in database tables.
-
-Do not store:
+Current constraint:
 
 ```text
-S3 access keys
-MinIO/AIStor root credentials
-Provider API keys
-Full private signed URLs
-Raw image bytes
-Unredacted provider payloads containing sensitive private data
+product_id is unique
 ```
 
-Store references instead:
+### `beauty_recommendations`
+
+Migration:
 
 ```text
-media_id
-bucket
-object_key
-object_version
-provider_task_id
-normalized result JSON
-status
-error code
+database/migrations/2026_05_28_000003_create_beauty_recommendations_table.php
 ```
 
-## Documentation update rule
+Purpose:
 
-Update this file whenever:
+- stores recommendation outputs produced by the deterministic scoring service
+- supports customer/profile/session retrieval without exposing provider logic
+
+Current fields:
 
 ```text
-new migrations are added
-new domain tables are added
-schema ownership changes
-database environment defaults change
-retention/deletion rules change
-media metadata structure changes
+id
+customer_id nullable
+profile_id nullable
+session_id nullable
+product_id
+score
+confidence
+reasons_json
+warnings_json
+breakdown_json
+score_version
+accepted nullable
+dismissed nullable
+created_at
+updated_at
 ```
+
+## Existing model integration
+
+Phase 4 intentionally attaches to existing Marvel commerce models instead of replacing them.
+
+Current linked models:
+
+- `Marvel\Database\Models\Product`
+- `Marvel\Database\Models\Shop`
+- `Marvel\Database\Models\Profile`
+- `Marvel\Database\Models\User`
+
+This keeps:
+
+- product ownership in current commerce tables
+- shop ownership in existing `shops.owner_id` and `shops.staffs`
+- customer profile ownership in existing `user_profiles.customer_id`
+
+## Controlled seed workflow
+
+Current seed helper:
+
+```text
+database/seeders/BeautyProductMappingSeeder.php
+```
+
+Behavior:
+
+- reads the first 10 existing products
+- assigns deterministic beauty mapping presets
+- exits cleanly if no products exist
+
+Current command:
+
+```bash
+php artisan db:seed --class=Database\\Seeders\\BeautyProductMappingSeeder
+```
+
+This is a controlled seed workflow. It was not forced into the global database seed path because product ownership and catalog shape already belong to the commerce package.
+
+## Sensitive data rules
+
+Never store:
+
+- raw media bytes in MySQL
+- S3/AIStor access keys
+- long-lived private media URLs
+- frontend-visible provider credentials
+
+Store instead:
+
+- object metadata
+- ownership references
+- signed URL TTL outputs
+- deterministic recommendation outputs
+
+## Follow-up items
+
+Not implemented in this phase:
+
+- `beauty_events`
+- `beauty_product_signals`
+- recommendation recompute audit trail
+- scheduled cleanup registration for expired media deletions
