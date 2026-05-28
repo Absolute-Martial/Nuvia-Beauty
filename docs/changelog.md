@@ -21,3 +21,5 @@ This file tracks architecture, implementation, and documentation changes for the
 - Added a controlled `BeautyProductMappingSeeder` workflow for the first 10 existing products.
 - Added storefront recommendation UI components with score, confidence, reasons, warnings, loading, error, and empty states.
 - Updated root and backend documentation to reflect the current Phase 4 implementation and the controlled admin/vendor mapping workflow.
+- Added Epic 7 beauty event capture and product signal aggregation with admin recompute support.
+- Added inline admin and vendor beauty mapping editors on existing product edit screens.

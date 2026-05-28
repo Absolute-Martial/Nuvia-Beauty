@@ -55,18 +55,14 @@ product mapping tools
 
 ## Current Phase 4 mapping support
 
-Phase 4 does not add a full admin beauty mapping UI yet.
+Phase 4 now adds a minimal admin beauty mapping editor inside the existing product edit flow.
 
-Current support is a controlled backend workflow:
+Current support:
 
-- backend product mapping APIs exist under `/api/v1/beauty/product-mappings`
-- the first 10 available products can be mapped with:
-
-```bash
-php artisan db:seed --class=Database\\Seeders\\BeautyProductMappingSeeder
-```
-
-This keeps the implementation inside the secured Laravel boundary until admin interaction flows are specified more precisely.
+- admin product edit screens can view and save beauty mapping tags
+- admin can trigger product signal recompute for the current product
+- backend product mapping APIs remain the source of truth under `/api/v1/beauty/product-mappings`
+- backend product signal recompute remains admin-only under `/api/v1/admin/beauty/recommendations/recompute`
 
 ## Maintenance rule
 

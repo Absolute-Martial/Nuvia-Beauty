@@ -100,4 +100,5 @@ export const API_ENDPOINTS = {
   BECAME_SELLER: 'became-seller',
   TRANSFER_SHOP_OWNERSHIP: 'transfer-shop-ownership',
   OWNERSHIP_TRANSFER: 'ownership-transfer',
+  BEAUTY_PRODUCT_MAPPINGS: 'v1/beauty/product-mappings',
 };

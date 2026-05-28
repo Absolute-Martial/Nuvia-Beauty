@@ -2,11 +2,13 @@
 
 namespace App\Domains\Beauty\Controllers;
 
+use App\Domains\Beauty\Jobs\RecomputeBeautyProductSignals;
 use App\Domains\Beauty\Models\BeautyProductMapping;
 use App\Domains\Beauty\Models\BeautyRecommendation;
 use App\Domains\Beauty\Services\FeatureExtractorService;
 use App\Domains\Beauty\Services\RecommendationScoringService;
 use App\Domains\Beauty\Services\ScoreVersionService;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -120,6 +122,24 @@ class BeautyRecommendationController extends Controller
                     'accepted' => $recommendation->accepted,
                     'dismissed' => $recommendation->dismissed,
                 ],
+            ],
+        ]);
+    }
+
+    public function recompute(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'product_ids' => ['nullable', 'array'],
+            'product_ids.*' => ['integer', 'exists:products,id'],
+        ]);
+
+        $summary = Bus::dispatchSync(
+            new RecomputeBeautyProductSignals($validated['product_ids'] ?? [])
+        );
+
+        return response()->json([
+            'data' => [
+                'product_signal_recompute' => $summary,
             ],
         ]);
     }

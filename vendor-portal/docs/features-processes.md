@@ -57,15 +57,14 @@ product mapping tools
 
 ## Current Phase 4 vendor support
 
-Phase 4 does not ship a vendor beauty-mapping editor yet.
+Phase 4 now ships a minimal vendor beauty-mapping editor inside the existing product edit flow.
 
 Current vendor-facing position:
 
-- vendor product ownership is respected by backend mapping authorization
-- mapping creation and updates remain a controlled backend or admin workflow for this phase
+- vendor product edit screens can view and save beauty mapping tags for owned products
+- backend ownership checks still gate `/api/v1/beauty/product-mappings`
 - no storage credentials, media secrets, or provider logic are exposed to the vendor frontend
-
-If ownership-specific vendor editing is needed later, it should build on the existing backend `/api/v1/beauty/product-mappings` authorization model rather than bypassing it in the browser.
+- advanced moderation, approval, or seller scoring workflows remain out of scope for this phase
 
 ## Maintenance rule
 

@@ -76,6 +76,25 @@ Authorization rule:
 
 - writes are limited to super admins, shop owners, or shop staff for the mapped product's shop
 
+### Beauty event and signal routes
+
+Owner domain:
+
+```text
+App\Domains\Beauty
+```
+
+| Method | Path | Middleware | Status |
+|---|---|---|---|
+| `POST` | `/api/v1/beauty/events` | none, optional auth context | current |
+| `POST` | `/api/v1/admin/beauty/recommendations/recompute` | `auth:sanctum`, `email.verified`, `permission:super_admin` | current |
+
+Authorization rule:
+
+- anonymous beauty events may only use `session_id`
+- authenticated customers may only write events for their own customer/profile context
+- signal recompute is restricted to super admins
+
 ### Beauty recommendation routes
 
 Owner domain:
@@ -212,6 +231,33 @@ Request shape:
   "ingredient_tags": ["niacinamide"],
   "avoid_tags": ["fragrance"],
   "limit": 4
+}
+```
+
+### `POST /api/v1/beauty/events`
+
+Request shape:
+
+```json
+{
+  "product_id": 10,
+  "event_type": "view",
+  "session_id": "guest-session-123",
+  "source_surface": "storefront",
+  "metadata": {
+    "placement": "product_detail",
+    "context": "beauty_recommendation_card"
+  }
+}
+```
+
+### `POST /api/v1/admin/beauty/recommendations/recompute`
+
+Request shape:
+
+```json
+{
+  "product_ids": [10, 11]
 }
 ```
 

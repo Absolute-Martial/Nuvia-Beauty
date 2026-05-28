@@ -138,7 +138,12 @@ Implemented:
 
 - `DeleteExpiredMediaAssets` job
 
+Implemented now:
+
+- beauty event capture under `/api/v1/beauty/events`
+- deterministic product signal aggregation under `beauty_product_signals`
+- admin-only product signal recompute endpoint and scheduled command
+
 Not yet wired:
 
 - recurring scheduler registration for expired-object cleanup
-- beauty events and product signal foundation

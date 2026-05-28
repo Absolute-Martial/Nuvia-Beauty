@@ -65,5 +65,4 @@ without hardcoding provider-specific controller logic into the browser or fronte
 Not implemented yet:
 
 - scheduled expired-media cleanup registration
-- beauty events and product signals foundation
 - storage operations dashboard UI in admin or vendor apps

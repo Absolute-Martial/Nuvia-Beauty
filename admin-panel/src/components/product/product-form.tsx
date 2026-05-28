@@ -58,6 +58,7 @@ import StickyFooterPanel from '@/components/ui/sticky-footer-panel';
 import { ProductDescriptionSuggestion } from '@/components/product/product-ai-prompt';
 import RichTextEditor from '@/components/ui/wysiwyg-editor/editor';
 import TooltipLabel from '@/components/ui/tooltip-label';
+import BeautyMappingEditor from '@/components/product/beauty-mapping-editor';
 
 type ProductFormProps = {
   initialValues?: Product | null;
@@ -542,6 +543,16 @@ export default function CreateOrUpdateProductForm({
             />
 
             <ProductTypeInput />
+          </div>
+
+          <div className="flex flex-wrap pb-8 my-5 border-b border-dashed border-border-base sm:my-8">
+            <Description
+              title="Beauty mapping"
+              details="Manage deterministic recommendation tags for this product. Save the product first if it does not exist yet."
+              className="w-full px-0 pb-5 sm:w-4/12 sm:py-8 sm:pr-4 md:w-1/3 md:pr-5"
+            />
+
+            <BeautyMappingEditor product={initialValues} />
           </div>
 
           {/* Simple Type */}

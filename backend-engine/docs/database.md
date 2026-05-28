@@ -208,9 +208,78 @@ Store instead:
 
 ## Follow-up items
 
+### `beauty_events`
+
+Migration:
+
+```text
+database/migrations/2026_05_28_000004_create_beauty_events_table.php
+```
+
+Purpose:
+
+- stores PII-safe beauty interaction events
+- feeds the deterministic product signal layer
+
+Current fields:
+
+```text
+id
+customer_id nullable
+profile_id nullable
+session_id nullable
+product_id
+shop_id nullable
+event_type
+source_surface nullable
+recommendation_id nullable
+metadata_json nullable
+occurred_at
+created_at
+updated_at
+```
+
+Supported event types:
+
+```text
+view
+add_to_cart
+purchase
+```
+
+### `beauty_product_signals`
+
+Migration:
+
+```text
+database/migrations/2026_05_28_000005_create_beauty_product_signals_table.php
+```
+
+Purpose:
+
+- stores deterministic per-product interaction aggregates
+- supports future recommendation recompute and ranking adjustments
+
+Current fields:
+
+```text
+id
+product_id unique
+shop_id nullable
+view_count
+add_to_cart_count
+purchase_count
+weighted_score
+signal_version
+last_event_at nullable
+last_recomputed_at nullable
+created_at
+updated_at
+```
+
+## Follow-up items
+
 Not implemented in this phase:
 
-- `beauty_events`
-- `beauty_product_signals`
 - recommendation recompute audit trail
 - scheduled cleanup registration for expired media deletions
