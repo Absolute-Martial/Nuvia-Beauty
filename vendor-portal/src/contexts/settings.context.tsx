@@ -13,8 +13,13 @@ const initialState = {
   },
   logo: {
     id: 1,
-    thumbnail: '/logo.jpg',
-    original: '/logo.jpg',
+    thumbnail: '/loho.png',
+    original: '/loho.png',
+  },
+  collapseLogo: {
+    id: 1,
+    thumbnail: '/loho.png',
+    original: '/loho.png',
   },
 };
 

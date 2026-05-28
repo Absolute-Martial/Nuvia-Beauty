@@ -11,14 +11,14 @@ export const siteSettings = {
   name: 'Nuvia Beauty',
   description: '',
   logo: {
-    url: '/logo.jpg',
+    url: '/loho.png',
     alt: 'Nuvia Beauty',
     href: '/',
     width: 160,
     height: 42,
   },
   collapseLogo: {
-    url: '/collapse-logo.svg',
+    url: '/loho.png',
     alt: 'Nuvia Beauty',
     href: '/',
     width: 32,
