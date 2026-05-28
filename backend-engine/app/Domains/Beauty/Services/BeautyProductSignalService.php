@@ -3,9 +3,11 @@
 namespace App\Domains\Beauty\Services;
 
 use App\Domains\Beauty\Models\BeautyEvent;
+use App\Domains\Beauty\Models\BeautyProductMapping;
 use App\Domains\Beauty\Models\BeautyProductSignal;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
+use Marvel\Database\Models\Product;
 
 class BeautyProductSignalService
 {
@@ -39,13 +41,20 @@ class BeautyProductSignalService
             ->values();
 
         if ($targetProductIds->isEmpty()) {
-            $targetProductIds = BeautyEvent::query()
+            $targetProductIds = BeautyProductMapping::query()
                 ->distinct()
                 ->orderBy('product_id')
                 ->pluck('product_id')
                 ->map(fn ($id) => (int) $id);
         }
 
+        $mappings = BeautyProductMapping::query()
+            ->whereIn('product_id', $targetProductIds)
+            ->get(['product_id'])
+            ->keyBy('product_id');
+        $shopIds = Product::query()
+            ->whereIn('id', $targetProductIds)
+            ->pluck('shop_id', 'id');
         $recomputed = 0;
 
         foreach ($targetProductIds as $productId) {
@@ -54,25 +63,26 @@ class BeautyProductSignalService
                 ->orderBy('occurred_at')
                 ->get();
 
-            if ($events->isEmpty()) {
-                continue;
-            }
-
             $viewCount = $events->where('event_type', 'view')->count();
             $addToCartCount = $events->where('event_type', 'add_to_cart')->count();
             $purchaseCount = $events->where('event_type', 'purchase')->count();
             $latestEvent = $events->last();
+            $mappedProduct = $mappings->get($productId);
+
+            if (!$latestEvent && !$mappedProduct) {
+                continue;
+            }
 
             BeautyProductSignal::updateOrCreate(
                 ['product_id' => $productId],
                 [
-                    'shop_id' => $latestEvent->shop_id,
+                    'shop_id' => $latestEvent->shop_id ?? $shopIds->get($productId),
                     'view_count' => $viewCount,
                     'add_to_cart_count' => $addToCartCount,
                     'purchase_count' => $purchaseCount,
                     'weighted_score' => $this->weightedScore($viewCount, $addToCartCount, $purchaseCount),
                     'signal_version' => self::SIGNAL_VERSION,
-                    'last_event_at' => $latestEvent->occurred_at,
+                    'last_event_at' => $latestEvent?->occurred_at,
                     'last_recomputed_at' => now(),
                 ],
             );

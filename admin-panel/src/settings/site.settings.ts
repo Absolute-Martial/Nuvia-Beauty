@@ -186,6 +186,11 @@ export const siteSettings = {
             icon: 'InventoryIcon',
           },
           {
+            href: Routes.beautyMappingOverview,
+            label: 'Beauty Mapping Overview',
+            icon: 'ProductsIcon',
+          },
+          {
             href: Routes.type.list,
             label: 'text-groups',
             icon: 'HomeIcon',

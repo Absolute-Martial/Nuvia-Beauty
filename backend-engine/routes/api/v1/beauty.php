@@ -16,6 +16,7 @@ Route::middleware(['auth:sanctum', 'email.verified'])->group(function () {
     Route::put('beauty/product-mappings/{id}', [BeautyProductMappingController::class, 'update']);
 
     Route::middleware(['permission:' . Permission::SUPER_ADMIN])->group(function () {
+        Route::get('admin/beauty/product-mappings/overview', [BeautyProductMappingController::class, 'overview']);
         Route::post('admin/beauty/recommendations/recompute', [BeautyRecommendationController::class, 'recompute']);
     });
 });

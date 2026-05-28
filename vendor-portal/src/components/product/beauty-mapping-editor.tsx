@@ -3,13 +3,15 @@ import Button from '@/components/ui/button';
 import Card from '@/components/common/card';
 import Input from '@/components/ui/input';
 import TextArea from '@/components/ui/text-area';
-import Badge from '@/components/ui/badge/badge';
 import { Product } from '@/types';
 import {
   useBeautyProductMappingQuery,
   useUpsertBeautyProductMappingMutation,
 } from '@/data/beauty-product-mapping';
 import { type ChangeEvent, useEffect, useState } from 'react';
+import BeautyMappingStatusBadge, {
+  getBeautyMappingStatus,
+} from './beauty-mapping-status-badge';
 
 type BeautyMappingEditorProps = {
   product?: Product | null;
@@ -47,6 +49,15 @@ const parseCsv = (value: string) =>
     ),
   );
 
+const recommendationDimensionCount = (draft: BeautyMappingDraft) =>
+  [
+    draft.concern_tags,
+    draft.skin_type_tags,
+    draft.tone_tags,
+    draft.undertone_tags,
+    draft.ingredient_tags,
+  ].filter((value) => parseCsv(value).length > 0).length;
+
 export default function BeautyMappingEditor({
   product,
 }: BeautyMappingEditorProps) {
@@ -59,6 +70,10 @@ export default function BeautyMappingEditor({
   const { mutate: upsertMapping, isLoading: saving } =
     useUpsertBeautyProductMappingMutation();
   const [draft, setDraft] = useState<BeautyMappingDraft>(emptyDraft);
+  const status = getBeautyMappingStatus(
+    recommendationDimensionCount(draft),
+    Boolean(mapping),
+  );
 
   useEffect(() => {
     if (!mapping) {
@@ -113,12 +128,12 @@ export default function BeautyMappingEditor({
   return (
     <Card className="w-full sm:w-8/12 md:w-2/3">
       <div className="mb-5 flex flex-wrap items-center gap-3">
-        <Badge
-          text={mapping ? 'Mapped' : 'Not mapped'}
-          color={mapping ? 'bg-accent' : 'bg-yellow-500'}
-        />
+        <BeautyMappingStatusBadge status={status} />
         <span className="text-sm text-body">
           Product ID: {productId}
+        </span>
+        <span className="text-sm text-body">
+          Recommendation dimensions: {recommendationDimensionCount(draft)}/5
         </span>
       </div>
 

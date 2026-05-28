@@ -101,6 +101,8 @@ export const API_ENDPOINTS = {
   TRANSFER_SHOP_OWNERSHIP: 'transfer-shop-ownership',
   OWNERSHIP_TRANSFER: 'ownership-transfer',
   BEAUTY_PRODUCT_MAPPINGS: 'v1/beauty/product-mappings',
+  ADMIN_BEAUTY_PRODUCT_MAPPINGS_OVERVIEW:
+    'v1/admin/beauty/product-mappings/overview',
   ADMIN_BEAUTY_RECOMMENDATIONS_RECOMPUTE:
     'v1/admin/beauty/recommendations/recompute',
 };

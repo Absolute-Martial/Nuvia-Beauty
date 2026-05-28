@@ -71,10 +71,12 @@ App\Domains\Beauty
 | `GET` | `/api/v1/beauty/product-mappings` | none | current |
 | `POST` | `/api/v1/beauty/product-mappings` | `auth:sanctum`, `email.verified` | current |
 | `PUT` | `/api/v1/beauty/product-mappings/{id}` | `auth:sanctum`, `email.verified` | current |
+| `GET` | `/api/v1/admin/beauty/product-mappings/overview` | `auth:sanctum`, `email.verified`, `permission:super_admin` | current |
 
 Authorization rule:
 
 - writes are limited to super admins, shop owners, or shop staff for the mapped product's shop
+- mapping overview is restricted to super admins
 
 ### Beauty event and signal routes
 
@@ -261,39 +263,71 @@ Request shape:
 }
 ```
 
+`product_ids` may be omitted or passed as an empty array to recompute all currently mapped products.
+
 Response shape:
 
 ```json
 {
   "data": {
-    "recommendations": [
-      {
-        "product_id": 1,
-        "score": 87,
-        "confidence": "high",
-        "reasons": [
-          "Matches oily skin profile",
-          "Targets dark spot concern"
-        ],
-        "warnings": [
-          "Avoid if sensitive to fragrance"
-        ],
-        "breakdown": {
-          "skin_type_match": 1,
-          "tone_match": 0.5,
-          "undertone_match": 0.5,
-          "concern_match": 1,
-          "ingredient_match": 1,
-          "product_tag_signal": 0.5,
-          "avoid_penalty": 1
-        },
-        "product": {
-          "id": 1,
-          "name": "Example Product",
-          "slug": "example-product"
+    "product_signal_recompute": {
+      "product_ids": [10, 11],
+      "recomputed_count": 2,
+      "signal_version": "beauty-signals-v1"
+    }
+  }
+}
+```
+
+### `GET /api/v1/admin/beauty/product-mappings/overview`
+
+Query parameters:
+
+- `name` optional product-name search
+- `shop_id` optional shop filter
+- `page` optional pagination page
+- `limit` optional page size, default `20`, max `100`
+
+Response shape:
+
+```json
+{
+  "data": {
+    "summary": {
+      "total_products": 120,
+      "mapped_products": 72,
+      "unmapped_products": 48,
+      "partial_products": 19,
+      "ready_products": 53
+    },
+    "products": {
+      "data": [
+        {
+          "id": 10,
+          "name": "Radiance Serum",
+          "slug": "radiance-serum",
+          "shop_id": 5,
+          "shop_name": "Nuvia Labs",
+          "type_name": "Serums",
+          "mapping_id": 8,
+          "mapping_status": "ready_for_recommendation",
+          "mapping_dimension_count": 4,
+          "has_avoid_tags": true,
+          "has_explanation_template": false,
+          "signal": {
+            "weighted_score": 1.4,
+            "views": 8,
+            "add_to_cart": 2,
+            "purchases": 1,
+            "last_recomputed_at": "2026-05-28T10:35:12Z"
+          }
         }
-      }
-    ]
+      ],
+      "current_page": 1,
+      "last_page": 6,
+      "per_page": 20,
+      "total": 120
+    }
   }
 }
 ```

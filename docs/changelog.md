@@ -23,3 +23,5 @@ This file tracks architecture, implementation, and documentation changes for the
 - Updated root and backend documentation to reflect the current Phase 4 implementation and the controlled admin/vendor mapping workflow.
 - Added Epic 7 beauty event capture and product signal aggregation with admin recompute support.
 - Added inline admin and vendor beauty mapping editors on existing product edit screens.
+- Added an admin beauty mapping overview surface with mapped/unmapped counts, recommendation-readiness status, and mapped-product recompute controls.
+- Updated vendor beauty mapping status presentation to distinguish missing, partial, and recommendation-ready products.

@@ -62,6 +62,7 @@ Phase 4 now ships a minimal vendor beauty-mapping editor inside the existing pro
 Current vendor-facing position:
 
 - vendor product edit screens can view and save beauty mapping tags for owned products
+- vendor beauty mapping status now distinguishes `missing mapping`, `partial mapping`, and `ready for recommendation`
 - backend ownership checks still gate `/api/v1/beauty/product-mappings`
 - no storage credentials, media secrets, or provider logic are exposed to the vendor frontend
 - advanced moderation, approval, or seller scoring workflows remain out of scope for this phase
