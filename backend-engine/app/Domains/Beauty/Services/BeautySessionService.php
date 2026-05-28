@@ -20,6 +20,7 @@ use Marvel\Database\Models\Shop;
 use Marvel\Database\Models\User;
 use Marvel\Enums\Permission;
 use RuntimeException;
+use Spatie\Permission\Exceptions\PermissionDoesNotExist;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class BeautySessionService
@@ -483,7 +484,7 @@ class BeautySessionService
 
     protected function authorizeShop(User $actor, int $shopId): void
     {
-        if ($actor->hasPermissionTo(Permission::SUPER_ADMIN)) {
+        if ($this->safeHasPermission($actor, Permission::SUPER_ADMIN)) {
             return;
         }
 
@@ -493,11 +494,11 @@ class BeautySessionService
             throw new AccessDeniedHttpException('Consultation shop could not be resolved.');
         }
 
-        if ($actor->hasPermissionTo(Permission::STORE_OWNER) && (int) $shop->owner_id === (int) $actor->id) {
+        if ($this->safeHasPermission($actor, Permission::STORE_OWNER) && (int) $shop->owner_id === (int) $actor->id) {
             return;
         }
 
-        if ($actor->hasPermissionTo(Permission::STAFF) && $shop->staffs->contains('id', $actor->id)) {
+        if ($this->safeHasPermission($actor, Permission::STAFF) && $shop->staffs->contains('id', $actor->id)) {
             return;
         }
 
@@ -720,5 +721,14 @@ class BeautySessionService
     protected function perfectCorpDemoMode(): bool
     {
         return (bool) config('services.perfect_corp.demo_mode', true);
+    }
+
+    protected function safeHasPermission(User $actor, string $permission): bool
+    {
+        try {
+            return $actor->hasPermissionTo($permission);
+        } catch (PermissionDoesNotExist) {
+            return false;
+        }
     }
 }
