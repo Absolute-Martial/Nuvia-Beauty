@@ -297,7 +297,7 @@ class UserController extends CoreController
         $user->givePermissionTo($permissions);
         $user->assignRole($role);
         $this->giveSignupPointsToCustomer($user->id);
-        $setting = Settings::first();
+        $setting = Settings::firstOrFallback();
         $useMustVerifyEmail = isset($setting->options['useMustVerifyEmail']) ? $setting->options['useMustVerifyEmail'] : false;
         if ($useMustVerifyEmail) {
             event(new Registered($user));

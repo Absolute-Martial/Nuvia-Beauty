@@ -18,6 +18,20 @@ backend-engine -> Laravel models/services -> MySQL
 
 Frontend apps must not connect to the database directly.
 
+## Console bootstrap note
+
+The `settings` table remains the source of truth for commerce settings.
+
+To keep Laravel console commands bootable against a fresh or partially initialized database, console startup now uses an in-memory fallback settings object when the `settings` table is unavailable during boot. The fallback reuses the same default payload as `SettingsSeeder`.
+
+This specifically unblocks:
+
+- `php artisan migrate`
+- `php artisan route:list --path=api/v1`
+- `php artisan list | grep beauty`
+
+It does not replace seeded settings rows, and it does not change normal HTTP/runtime resolution of DB-backed settings.
+
 ## Current Phase 4 tables
 
 ### `beauty_media_assets`

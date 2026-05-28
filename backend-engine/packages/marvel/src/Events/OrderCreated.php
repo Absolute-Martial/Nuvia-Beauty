@@ -122,7 +122,7 @@ class OrderCreated implements ShouldQueue, ShouldBroadcast
     public function broadcastWhen(): bool
     {
         try {
-            $settings = Settings::first();
+            $settings = Settings::firstOrFallback();
             $enableBroadCast = false;
 
             if (config('shop.pusher.enabled') === null) {

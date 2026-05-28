@@ -34,7 +34,7 @@ class PaymentMethodController extends CoreController
     public function __construct(PaymentMethodRepository $repository)
     {
         $this->repository = $repository;
-        $this->settings = Settings::first();
+        $this->settings = Settings::firstOrFallback();
     }
 
     /**

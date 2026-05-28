@@ -123,3 +123,24 @@ QUEUE_CONNECTION=sync
 ```
 
 This avoids the existing runtime dependency on PHP Redis extensions during migrations and early boot.
+
+## Console-safe settings fallback
+
+`backend-engine` still uses DB-backed commerce settings at runtime. That behavior has not been removed.
+
+For Laravel console commands only, the app now falls back to the same default settings payload used by `SettingsSeeder` when either of these is true:
+
+- the `settings` table is not available yet
+- the console command is booting before settings have been seeded
+
+This keeps commands such as:
+
+```bash
+php artisan migrate
+php artisan route:list --path=api/v1
+php artisan list | grep beauty
+```
+
+from failing during bootstrap because of an early `Settings::first()` lookup.
+
+The fallback is in-memory only. It does not write settings rows, and normal HTTP/runtime behavior continues to prefer the database-backed `settings` record.

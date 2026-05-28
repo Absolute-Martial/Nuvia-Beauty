@@ -10,7 +10,7 @@ abstract class Base
 
   public function __construct()
   {
-    $settings = Settings::first();
+    $settings = Settings::firstOrFallback();
     $this->currency = $settings->options['currency'];
   }
 }

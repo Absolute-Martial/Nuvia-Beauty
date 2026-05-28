@@ -242,7 +242,7 @@ class ShopServiceProvider extends ServiceProvider
 
         $this->app->singleton('ai', function ($app) {
             $active_ai = '';
-            $settings = Settings::first();
+            $settings = Settings::firstOrFallback();
 
             if (!empty(request()) && request()->has('artificial_intelligence')) {
                 $active_ai = ucfirst(strtolower(request()['artificial_intelligence']));

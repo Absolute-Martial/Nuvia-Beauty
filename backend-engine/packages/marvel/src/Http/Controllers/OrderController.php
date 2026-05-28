@@ -47,7 +47,7 @@ class OrderController extends CoreController
     public function __construct(OrderRepository $repository)
     {
         $this->repository = $repository;
-        $this->settings = Settings::first();
+        $this->settings = Settings::firstOrFallback();
     }
 
     /**

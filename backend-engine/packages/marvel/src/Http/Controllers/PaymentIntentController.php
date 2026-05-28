@@ -17,7 +17,7 @@ class PaymentIntentController extends CoreController
     public function __construct(PaymentIntentRepository $repository)
     {
         $this->repository = $repository;
-        $this->settings = Settings::first();
+        $this->settings = Settings::firstOrFallback();
     }
 
 

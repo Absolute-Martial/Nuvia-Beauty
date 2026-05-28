@@ -11,7 +11,7 @@ abstract class Base
 
   public function __construct()
   {
-    $settings = Settings::first();
+    $settings = Settings::firstOrFallback();
     $this->enable_ai = $settings->options['useAi'];
     if (!$this->enable_ai) {
       throw new HttpException(400, PLEASE_ENABLE_OPENAI_FROM_THE_SETTINGS);

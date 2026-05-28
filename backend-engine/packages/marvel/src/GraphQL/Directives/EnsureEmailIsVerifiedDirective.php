@@ -34,7 +34,7 @@ GRAPHQL;
             }
 
             // Do something before the resolver, e.g. validate $args, check authentication
-            $setting = Settings::first();
+            $setting = Settings::firstOrFallback();
             $useMustVerifyEmail = isset($setting->options['useMustVerifyEmail']) ? $setting->options['useMustVerifyEmail'] : false;
             if ($useMustVerifyEmail && $context->user() && $context->user() instanceof MustVerifyEmail && !$context->request()->user()->hasVerifiedEmail()) {
                 throw new MarvelException(EMAIL_NOT_VERIFIED, EMAIL_NOT_VERIFIED);
