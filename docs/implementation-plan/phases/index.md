@@ -13,6 +13,7 @@ This directory tracks the Nuvia Beauty implementation phases from the current do
 | Phase 4 | `phase-4-seller-consultation-foundation.md` | Planned next product foundation |
 | Phase 5 | `phase-5-perfect-corp-p0-integration.md` | Planned Perfect Corp API integration |
 | Phase 6 | `phase-6-demo-push-readiness.md` | Planned release/demo hardening |
+| Phase 7 | `phase-7-personalized-domain-expansion.md` | Planned shop-specific domain and branded profile-reopen foundation |
 
 ## Source documents
 
@@ -52,4 +53,6 @@ Reported locally implemented, not remotely confirmed.
 6. Build seller consultation foundation.
 7. Add Perfect Corp P0 integration in demo mode first.
 8. Enable live Perfect Corp mode only after provider access and security checks.
+9. Prepare demo/push readiness.
+10. Add personalized domain/subdomain expansion only after the demo flow is stable.
 ```
