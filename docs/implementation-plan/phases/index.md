@@ -13,6 +13,9 @@ This directory tracks the Nuvia Beauty implementation phases from the current do
 | Phase 4 | `phase-4-seller-consultation-foundation.md` | Planned next product foundation |
 | Phase 5 | `phase-5-perfect-corp-p0-integration.md` | Planned Perfect Corp API integration |
 | Phase 6 | `phase-6-demo-push-readiness.md` | Planned release/demo hardening |
+| Phase 7 | `phase-7-personalized-domain-expansion.md` | Planned shop-specific domain and branded profile-reopen foundation |
+| Phase 8 | `phase-8-customer-self-scan-profile-history.md` | Planned customer self-scan and profile snapshot history |
+| Phase 9 | `phase-9-try-on-studio-makeup-vto.md` | Planned controlled makeup virtual try-on |
 
 ## Source documents
 
@@ -49,7 +52,10 @@ Reported locally implemented, not remotely confirmed.
 3. Run full backend/frontend validation.
 4. Seed real demo products and mappings.
 5. Deploy to staging/test.
-6. Build seller consultation foundation.
-7. Add Perfect Corp P0 integration in demo mode first.
-8. Enable live Perfect Corp mode only after provider access and security checks.
+6. Build seller consultation foundation (Phase 4).
+7. Add Perfect Corp P0 integration in demo mode (Phase 5).
+8. Prepare demo/push readiness (Phase 6).
+9. Add personalized domain/subdomain expansion (Phase 7).
+10. Add customer self-scan & profile history (Phase 8).
+11. Add Try-On Studio / Makeup VTO (Phase 9).
 ```
