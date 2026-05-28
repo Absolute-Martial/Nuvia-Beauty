@@ -26,7 +26,7 @@ export const siteSettings = {
     address: '',
   },
   logo: {
-    url: '/assets/images/logo.jpg',
+    url: '/loho.png',
     alt: 'Nuvia Beauty',
     href: '/',
     width: 110,
