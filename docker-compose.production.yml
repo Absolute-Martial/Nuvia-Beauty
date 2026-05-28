@@ -54,6 +54,12 @@ services:
       - db_data:/var/lib/mysql
     networks:
       - nuvia_beauty_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "${DB_USERNAME:-nuvia_beauty}", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
   redis:
     image: redis:7.4-alpine
@@ -110,7 +116,7 @@ services:
     restart: "no"
     depends_on:
       db:
-        condition: service_started
+        condition: service_healthy
       redis:
         condition: service_started
       aistor:
@@ -142,7 +148,7 @@ services:
     restart: unless-stopped
     depends_on:
       db:
-        condition: service_started
+        condition: service_healthy
       redis:
         condition: service_started
       aistor:
