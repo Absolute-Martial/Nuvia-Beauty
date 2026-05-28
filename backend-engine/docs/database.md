@@ -165,6 +165,165 @@ created_at
 updated_at
 ```
 
+### `beauty_profiles`
+
+Migration:
+
+```text
+database/migrations/2026_05_28_000006_create_beauty_profiles_table.php
+```
+
+Purpose:
+
+- stores seller consultation profile data separately from commerce `user_profiles`
+- allows guest, new-customer, and returning-customer beauty criteria to be persisted without storing raw media
+
+Current fields:
+
+```text
+id
+shop_id
+customer_id nullable
+user_profile_id nullable
+source
+customer_name nullable
+contact_email nullable
+contact_phone nullable
+skin_type_tags JSON nullable
+tone_tags JSON nullable
+undertone_tags JSON nullable
+concern_tags JSON nullable
+ingredient_tags JSON nullable
+avoid_tags JSON nullable
+notes nullable
+created_at
+updated_at
+```
+
+### `beauty_profile_snapshots`
+
+Migration:
+
+```text
+database/migrations/2026_05_28_000007_create_beauty_profile_snapshots_table.php
+```
+
+Purpose:
+
+- freezes the consultation criteria used by a specific session
+- supports later provider analysis without mutating the original profile history
+
+### `beauty_sessions`
+
+Migration:
+
+```text
+database/migrations/2026_05_28_000008_create_beauty_sessions_table.php
+```
+
+Purpose:
+
+- tracks seller-assisted consultation workflow state
+- links shop, consultant, optional customer context, optional media, and current snapshot
+
+Current fields:
+
+```text
+id
+public_id unique
+shop_id
+consultant_user_id
+customer_id nullable
+user_profile_id nullable
+beauty_profile_id nullable
+current_snapshot_id nullable
+primary_media_asset_id nullable
+consultation_mode
+session_state
+notes nullable
+saved_at nullable
+discarded_at nullable
+failed_at nullable
+created_at
+updated_at
+```
+
+Current state values used by code:
+
+```text
+draft
+media_uploaded
+analysis_pending
+analysis_completed
+saved
+discarded
+failed
+```
+
+### `beauty_ai_tasks`
+
+Migration:
+
+```text
+database/migrations/2026_05_28_000009_create_beauty_ai_tasks_table.php
+```
+
+Purpose:
+
+- stores placeholder provider task metadata for future Perfect Corp integration
+- allows the seller consultation foundation to track queued and completed analysis without calling the provider yet
+
+### `beauty_analysis_results`
+
+Migration:
+
+```text
+database/migrations/2026_05_28_000010_create_beauty_analysis_results_table.php
+```
+
+Purpose:
+
+- stores placeholder analysis state and normalized consultation traits
+- records deterministic recommendation counts against a session even before provider integration exists
+
+### `beauty_quota_accounts`
+
+Migration:
+
+```text
+database/migrations/2026_05_28_000011_create_beauty_quota_accounts_table.php
+```
+
+Purpose:
+
+- creates the provider/quota accounting foundation required by the Phase 4 gate to Perfect Corp
+- currently tracks per-shop `seller_consultation` usage under a placeholder provider account
+
+### `beauty_quota_events`
+
+Migration:
+
+```text
+database/migrations/2026_05_28_000012_create_beauty_quota_events_table.php
+```
+
+Purpose:
+
+- records quota-impacting consultation events such as session creation, media attachment, and recommendation generation
+
+### `audit_logs`
+
+Migration:
+
+```text
+database/migrations/2026_05_28_000013_create_audit_logs_table.php
+```
+
+Purpose:
+
+- stores lightweight action audit rows where practical
+- current Phase 4 implementation records consultation `saved` and `discarded` actions
+
 ## Existing model integration
 
 Phase 4 intentionally attaches to existing Marvel commerce models instead of replacing them.
@@ -290,8 +449,6 @@ last_recomputed_at nullable
 created_at
 updated_at
 ```
-
-## Follow-up items
 
 Not implemented in this phase:
 

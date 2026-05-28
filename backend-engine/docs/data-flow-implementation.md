@@ -67,6 +67,52 @@ Storefront request
   -> JSON response to storefront
 ```
 
+### Seller consultation session flow
+
+```text
+Vendor starts consultation in vendor-portal
+  -> POST /api/v1/beauty/sessions
+  -> BeautySessionService creates beauty_profiles row
+  -> BeautyProfileSnapshot freezes current consultation criteria
+  -> BeautySession enters draft state
+  -> BeautyQuotaAccount/Event foundation records session_created
+```
+
+### Consultation media attachment flow
+
+```text
+Vendor requests private upload slot
+  -> POST /api/v1/storage/upload-slots with purpose=beauty_input
+  -> browser uploads directly to S3-compatible storage
+  -> POST /api/v1/storage/media/{mediaId}/confirm
+  -> POST /api/v1/beauty/sessions/{id}/attach-media
+  -> BeautySession links primary media asset
+  -> placeholder BeautyAiTask and BeautyAnalysisResult rows move to pending
+  -> BeautySession enters analysis_pending state
+```
+
+### Seller consultation recommendation flow
+
+```text
+Vendor requests recommendations for a session
+  -> GET /api/v1/beauty/sessions/{id}/recommendations
+  -> BeautySessionService loads the frozen snapshot criteria
+  -> BeautyProductMapping query is restricted to the managed shop
+  -> deterministic RecommendationScoringService ranks mapped products
+  -> BeautyRecommendation rows are persisted with session_id = beauty_sessions.public_id
+  -> placeholder analysis result is marked completed
+  -> BeautySession enters analysis_completed state
+```
+
+### Save and discard flow
+
+```text
+Vendor saves or discards consultation
+  -> POST /api/v1/beauty/sessions/{id}/save or /discard
+  -> BeautySession state changes to saved or discarded
+  -> audit_logs receives a lightweight consultation action row
+```
+
 ## Current recommendation scoring model
 
 Inputs:
@@ -117,20 +163,13 @@ Frontend security rule:
 
 ## Current admin and vendor support model
 
-This phase ships a controlled backend workflow instead of a full dashboard mapping UI.
-
 Supported now:
 
 - backend product mapping API
-- controlled seed helper for the first 10 existing products
-
-Controlled seed command:
-
-```bash
-php artisan db:seed --class=Database\\Seeders\\BeautyProductMappingSeeder
-```
-
-This avoids overbuilding marketplace dashboards before ownership and moderation workflows are fully specified.
+- admin beauty mapping overview and recompute controls
+- vendor inline beauty mapping editor for owned products
+- vendor consultation page for seller-assisted beauty sessions
+- controlled beauty mapping seed helper for empty or early catalogs
 
 ## Current cleanup path
 

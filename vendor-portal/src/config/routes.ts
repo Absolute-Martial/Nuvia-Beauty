@@ -170,6 +170,7 @@ export const Routes = {
   },
   vendorDashboardShopTransferRequest: '/shop-transfer/vendor',
   ownerDashboardShopTransferRequest: '/shop-transfer/vendor',
+  beautyConsultations: '/beauty/consultations',
 };
 
 function routesFactory(endpoint: string) {

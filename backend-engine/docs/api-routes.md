@@ -117,6 +117,30 @@ Authorization rule:
 - super admins may inspect any recommendation
 - recommendation reads require either matching customer, matching profile, or matching session token
 
+### Beauty consultation session routes
+
+Owner domain:
+
+```text
+App\Domains\Beauty
+```
+
+| Method | Path | Middleware | Status |
+|---|---|---|---|
+| `POST` | `/api/v1/beauty/sessions` | `auth:sanctum`, `email.verified` | current |
+| `GET` | `/api/v1/beauty/sessions/{id}` | `auth:sanctum`, `email.verified` | current |
+| `POST` | `/api/v1/beauty/sessions/{id}/attach-media` | `auth:sanctum`, `email.verified` | current |
+| `POST` | `/api/v1/beauty/sessions/{id}/save` | `auth:sanctum`, `email.verified` | current |
+| `POST` | `/api/v1/beauty/sessions/{id}/discard` | `auth:sanctum`, `email.verified` | current |
+| `GET` | `/api/v1/beauty/sessions/{id}/recommendations` | `auth:sanctum`, `email.verified` | current |
+
+Authorization rule:
+
+- consultation routes require an authenticated seller or super admin
+- shop owners and shop staff may only access sessions for shops they manage
+- returning-customer consultations can reference existing `users` and `user_profiles`
+- media attachment only accepts confirmed private media assets belonging to the same shop
+
 ## Current request shapes
 
 ### `POST /api/v1/storage/upload-slots`
@@ -260,6 +284,60 @@ Request shape:
 ```json
 {
   "product_ids": [10, 11]
+}
+```
+
+### `POST /api/v1/beauty/sessions`
+
+Request shape:
+
+```json
+{
+  "shop_id": 3,
+  "consultation_mode": "returning_customer",
+  "customer_id": 18,
+  "notes": "Customer wants brightening guidance before checkout.",
+  "skin_type_tags": ["oily"],
+  "tone_tags": ["medium"],
+  "undertone_tags": ["warm"],
+  "concern_tags": ["dark_spot"],
+  "ingredient_tags": ["niacinamide"],
+  "avoid_tags": ["fragrance"]
+}
+```
+
+### `POST /api/v1/beauty/sessions/{id}/attach-media`
+
+Request shape:
+
+```json
+{
+  "media_asset_id": 41
+}
+```
+
+### `GET /api/v1/beauty/sessions/{id}/recommendations`
+
+Response shape:
+
+```json
+{
+  "data": {
+    "recommendations": [
+      {
+        "product_id": 10,
+        "score": 87,
+        "confidence": "high",
+        "reasons": ["Matches oily skin profile"],
+        "warnings": ["Avoid if sensitive to fragrance"],
+        "breakdown": {
+          "skin_type_match": 1,
+          "concern_match": 1,
+          "avoid_penalty": 0
+        }
+      }
+    ]
+  }
 }
 ```
 

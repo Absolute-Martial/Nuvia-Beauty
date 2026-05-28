@@ -25,3 +25,6 @@ This file tracks architecture, implementation, and documentation changes for the
 - Added inline admin and vendor beauty mapping editors on existing product edit screens.
 - Added an admin beauty mapping overview surface with mapped/unmapped counts, recommendation-readiness status, and mapped-product recompute controls.
 - Updated vendor beauty mapping status presentation to distinguish missing, partial, and recommendation-ready products.
+- Added the Phase 4 seller consultation backend foundation with `beauty_profiles`, `beauty_profile_snapshots`, `beauty_sessions`, `beauty_ai_tasks`, `beauty_analysis_results`, `beauty_quota_accounts`, `beauty_quota_events`, and lightweight `audit_logs`.
+- Added authenticated `/api/v1/beauty/sessions/*` consultation routes for session creation, private media attachment, deterministic recommendation generation, and save/discard state transitions.
+- Added a vendor consultation page at `vendor-portal/src/pages/beauty/consultations.tsx` for seller-assisted beauty sessions using the existing private storage flow.

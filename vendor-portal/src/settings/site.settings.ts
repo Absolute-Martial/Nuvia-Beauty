@@ -204,6 +204,11 @@ export const siteSettings = {
             label: 'sidebar-nav-item-attributes',
             icon: 'AttributeIcon',
           },
+          {
+            href: Routes.beautyConsultations,
+            label: 'Beauty consultations',
+            icon: 'ProductsIcon',
+          },
           // {
           //   href: Routes.manufacturer.list,
           //   label: 'sidebar-nav-item-manufacturers',

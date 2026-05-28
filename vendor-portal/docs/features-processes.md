@@ -67,6 +67,29 @@ Current vendor-facing position:
 - no storage credentials, media secrets, or provider logic are exposed to the vendor frontend
 - advanced moderation, approval, or seller scoring workflows remain out of scope for this phase
 
+Phase 4 also now ships a seller consultation foundation page at `/beauty/consultations`.
+
+Current consultation flow:
+
+```text
+Vendor opens Beauty consultations
+  -> selects a managed shop
+  -> chooses guest/new/returning customer mode
+  -> captures structured profile tags and notes
+  -> creates consultation session through backend-engine
+  -> uploads a private beauty input image or attaches an existing media asset
+  -> requests deterministic recommendations for the session
+  -> saves or discards the session
+```
+
+Current vendor consultation guardrails:
+
+- consultation sessions are scoped to managed shops only
+- returning-customer mode uses existing customer lookup where available
+- uploaded consultation media stays in backend-managed private storage
+- provider tasks/results are placeholders only in this phase
+- no analytics dashboard or Perfect Corp runtime integration is exposed yet
+
 ## Maintenance rule
 
 Update this file when vendor-facing features, seller processes, or API consumption flow changes.
