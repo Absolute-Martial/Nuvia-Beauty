@@ -187,6 +187,20 @@ Supported now:
 - vendor consultation page for seller-assisted beauty sessions
 - controlled beauty mapping seed helper for empty or early catalogs
 
+## Kaggle dataset adaptation flow
+
+```text
+Operator downloads cosmetic-brand-products-dataset locally
+  -> php artisan beauty:seed-kaggle-catalog /path/to/cosmetic-brand-products-dataset.zip
+  -> KaggleBeautyCatalogImportService reads CSV or ZIP locally
+  -> source rows normalize into beauty catalog families
+  -> first 40 existing commerce products are selected by id order
+  -> beauty_product_mappings are upserted for the existing products
+  -> JSON import report is written for demo validation
+```
+
+This flow keeps the commerce `products` table stable while making the beauty metadata look and feel like it was adapted from a real cosmetics catalog.
+
 ## Current cleanup path
 
 Implemented:
