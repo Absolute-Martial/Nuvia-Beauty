@@ -363,6 +363,38 @@ php artisan db:seed --class=Database\\Seeders\\BeautyProductMappingSeeder
 
 This is a controlled seed workflow. It was not forced into the global database seed path because product ownership and catalog shape already belong to the commerce package.
 
+## Kaggle catalog import seed workflow
+
+Current import command:
+
+```text
+php artisan beauty:seed-kaggle-catalog {source}
+```
+
+Purpose:
+
+- adapts a local Kaggle cosmetic catalog CSV or ZIP into the existing Nuvia Beauty product catalog
+- seeds or updates beauty mappings for the first 40 existing products by default
+- keeps the commerce product table unchanged
+- writes a JSON import report for demo and validation use
+
+Behavior:
+
+- reads only a local file path supplied at runtime
+- supports CSV files directly
+- supports ZIP archives containing a CSV
+- normalizes source rows into beauty catalog families such as skincare, makeup, haircare, bodycare, fragrance, nail, eye, lip, and tools
+- updates existing `beauty_product_mappings` rows by product ID
+- does not create new `products` rows
+
+Validation example:
+
+```bash
+php artisan beauty:seed-kaggle-catalog /tmp/cosmetic-brand-products-dataset.zip --limit=40
+```
+
+Use this command when you want a demo catalog that adapts to the existing commerce products instead of bootstrapping a new product catalog.
+
 ## Sensitive data rules
 
 Never store:

@@ -29,3 +29,4 @@ This file tracks architecture, implementation, and documentation changes for the
 - Added authenticated `/api/v1/beauty/sessions/*` consultation routes for session creation, private media attachment, deterministic recommendation generation, and save/discard state transitions.
 - Added a vendor consultation page at `vendor-portal/src/pages/beauty/consultations.tsx` for seller-assisted beauty sessions using the existing private storage flow.
 - Added the Phase 5 Perfect Corp P0 demo-first integration path with backend-only task orchestration, `analysis/start` and `analysis/{taskId}/status` endpoints, normalized analysis storage, snapshot regeneration, and refreshed recommendations in the vendor consultation flow.
+- Added an explicit `beauty:seed-kaggle-catalog` backend command that adapts a local Kaggle cosmetic dataset onto the existing commerce catalog and upserts beauty mappings for about 40 existing products.
