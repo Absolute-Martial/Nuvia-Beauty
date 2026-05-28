@@ -87,8 +87,25 @@ Vendor requests private upload slot
   -> POST /api/v1/storage/media/{mediaId}/confirm
   -> POST /api/v1/beauty/sessions/{id}/attach-media
   -> BeautySession links primary media asset
-  -> placeholder BeautyAiTask and BeautyAnalysisResult rows move to pending
-  -> BeautySession enters analysis_pending state
+  -> BeautySession enters media_uploaded state
+```
+
+### Perfect Corp P0 analysis flow
+
+```text
+Vendor starts analysis for an attached consultation image
+  -> POST /api/v1/beauty/sessions/{id}/analysis/start
+  -> BeautySessionService validates seller access, media ownership, privacy, and quota state
+  -> BeautyAiTask row is created in queued state
+  -> BeautyAnalysisResult row is created in pending state
+  -> CreatePerfectCorpAnalysisTask is dispatched
+  -> in demo mode, no provider call is made
+  -> NormalizePerfectCorpResultService generates deterministic sample output
+  -> in live mode, PerfectCorpClient submits and polls provider task status
+  -> BeautyProfileSnapshot is created from normalized traits
+  -> BeautyRecommendation rows are regenerated from the updated snapshot
+  -> BeautySession enters analysis_completed state
+  -> GET /api/v1/beauty/analysis/{taskId}/status returns normalized summary only
 ```
 
 ### Seller consultation recommendation flow
@@ -100,8 +117,7 @@ Vendor requests recommendations for a session
   -> BeautyProductMapping query is restricted to the managed shop
   -> deterministic RecommendationScoringService ranks mapped products
   -> BeautyRecommendation rows are persisted with session_id = beauty_sessions.public_id
-  -> placeholder analysis result is marked completed
-  -> BeautySession enters analysis_completed state
+  -> recommendations can be refreshed after demo/live Perfect Corp normalization
 ```
 
 ### Save and discard flow

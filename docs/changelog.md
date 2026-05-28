@@ -28,3 +28,4 @@ This file tracks architecture, implementation, and documentation changes for the
 - Added the Phase 4 seller consultation backend foundation with `beauty_profiles`, `beauty_profile_snapshots`, `beauty_sessions`, `beauty_ai_tasks`, `beauty_analysis_results`, `beauty_quota_accounts`, `beauty_quota_events`, and lightweight `audit_logs`.
 - Added authenticated `/api/v1/beauty/sessions/*` consultation routes for session creation, private media attachment, deterministic recommendation generation, and save/discard state transitions.
 - Added a vendor consultation page at `vendor-portal/src/pages/beauty/consultations.tsx` for seller-assisted beauty sessions using the existing private storage flow.
+- Added the Phase 5 Perfect Corp P0 demo-first integration path with backend-only task orchestration, `analysis/start` and `analysis/{taskId}/status` endpoints, normalized analysis storage, snapshot regeneration, and refreshed recommendations in the vendor consultation flow.

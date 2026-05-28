@@ -30,4 +30,15 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'perfect_corp' => [
+        'base_url' => env('PERFECT_CORP_API_BASE_URL'),
+        'api_key' => env('PERFECT_CORP_API_KEY'),
+        'bearer_key' => env('PERFECT_CORP_API_BEARER_KEY'),
+        'enabled' => env('PERFECT_CORP_ENABLED', false),
+        'demo_mode' => env('PERFECT_CORP_DEMO_MODE', true),
+        'timeout_seconds' => env('PERFECT_CORP_TIMEOUT_SECONDS', 120),
+        'poll_interval_seconds' => env('PERFECT_CORP_POLL_INTERVAL_SECONDS', 2),
+        'max_attempts' => env('PERFECT_CORP_MAX_ATTEMPTS', 3),
+    ],
+
 ];

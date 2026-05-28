@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import { useTranslation } from 'next-i18next/pages';
 import { API_ENDPOINTS } from './client/api-endpoints';
 import {
+  BeautyAnalysisStatusPayload,
   beautyConsultationClient,
   CreateBeautySessionPayload,
 } from './client/beauty-consultation';
@@ -123,6 +124,50 @@ export const useBeautyRecommendationsMutation = () => {
       },
     },
   );
+};
+
+export const useStartBeautyAnalysisMutation = () => {
+  const { t } = useTranslation();
+
+  return useMutation(
+    ({ sessionId }: { sessionId: string }) =>
+      beautyConsultationClient.startAnalysis(sessionId),
+    {
+      onSuccess: () => {
+        toast.success(t('Consultation analysis started.'));
+      },
+      onError: (error: any) => {
+        toast.error(error?.response?.data?.message ?? t('Consultation analysis start failed.'));
+      },
+    },
+  );
+};
+
+export const useBeautyAnalysisStatusQuery = (
+  taskId?: number | null,
+  enabled = true,
+) => {
+  const query = useQuery<BeautyAnalysisStatusPayload>(
+    [API_ENDPOINTS.BEAUTY_ANALYSIS, taskId],
+    () => beautyConsultationClient.getAnalysisStatus(taskId!),
+    {
+      enabled: Boolean(taskId) && enabled,
+      refetchInterval: (response) => {
+        const task = response?.data?.task;
+
+        if (!task) {
+          return false;
+        }
+
+        return ['queued', 'processing'].includes(task.status) ? 2000 : false;
+      },
+    },
+  );
+
+  return {
+    ...query,
+    analysisStatus: query.data?.data ?? null,
+  };
 };
 
 export const useSaveBeautySessionMutation = () => {

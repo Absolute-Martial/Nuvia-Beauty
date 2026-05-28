@@ -130,9 +130,11 @@ App\Domains\Beauty
 | `POST` | `/api/v1/beauty/sessions` | `auth:sanctum`, `email.verified` | current |
 | `GET` | `/api/v1/beauty/sessions/{id}` | `auth:sanctum`, `email.verified` | current |
 | `POST` | `/api/v1/beauty/sessions/{id}/attach-media` | `auth:sanctum`, `email.verified` | current |
+| `POST` | `/api/v1/beauty/sessions/{id}/analysis/start` | `auth:sanctum`, `email.verified` | current |
 | `POST` | `/api/v1/beauty/sessions/{id}/save` | `auth:sanctum`, `email.verified` | current |
 | `POST` | `/api/v1/beauty/sessions/{id}/discard` | `auth:sanctum`, `email.verified` | current |
 | `GET` | `/api/v1/beauty/sessions/{id}/recommendations` | `auth:sanctum`, `email.verified` | current |
+| `GET` | `/api/v1/beauty/analysis/{taskId}/status` | `auth:sanctum`, `email.verified` | current |
 
 Authorization rule:
 
@@ -140,6 +142,8 @@ Authorization rule:
 - shop owners and shop staff may only access sessions for shops they manage
 - returning-customer consultations can reference existing `users` and `user_profiles`
 - media attachment only accepts confirmed private media assets belonging to the same shop
+- analysis start only accepts sessions that already have a confirmed private media asset
+- analysis status returns normalized provider output only and never exposes raw provider payloads
 
 ## Current request shapes
 

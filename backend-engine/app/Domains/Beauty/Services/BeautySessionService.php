@@ -2,6 +2,7 @@
 
 namespace App\Domains\Beauty\Services;
 
+use App\Domains\Beauty\Jobs\CreatePerfectCorpAnalysisTask;
 use App\Domains\Beauty\Models\BeautyAiTask;
 use App\Domains\Beauty\Models\BeautyAnalysisResult;
 use App\Domains\Beauty\Models\BeautyProfile;
@@ -18,6 +19,7 @@ use Illuminate\Support\Str;
 use Marvel\Database\Models\Shop;
 use Marvel\Database\Models\User;
 use Marvel\Enums\Permission;
+use RuntimeException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class BeautySessionService
@@ -113,41 +115,9 @@ class BeautySessionService
         DB::transaction(function () use ($session, $mediaAsset) {
             $session->forceFill([
                 'primary_media_asset_id' => $mediaAsset->id,
-                'session_state' => BeautySession::STATE_ANALYSIS_PENDING,
+                'session_state' => BeautySession::STATE_MEDIA_UPLOADED,
+                'failed_at' => null,
             ])->save();
-
-            $task = BeautyAiTask::firstOrCreate(
-                [
-                    'beauty_session_id' => $session->id,
-                    'provider' => 'perfectcorp_placeholder',
-                    'task_type' => 'beauty_analysis',
-                ],
-                [
-                    'status' => 'pending',
-                    'request_payload' => [
-                        'media_asset_id' => $mediaAsset->id,
-                        'object_key' => $mediaAsset->object_key,
-                    ],
-                    'queued_at' => now(),
-                ],
-            );
-
-            BeautyAnalysisResult::updateOrCreate(
-                [
-                    'beauty_session_id' => $session->id,
-                    'provider' => 'perfectcorp_placeholder',
-                ],
-                [
-                    'beauty_ai_task_id' => $task->id,
-                    'status' => 'pending',
-                    'summary_payload' => [
-                        'placeholder' => true,
-                        'message' => 'Provider analysis is deferred to a later phase.',
-                    ],
-                    'normalized_traits' => $this->snapshotTraits($session->currentSnapshot),
-                    'recommendation_count' => 0,
-                ],
-            );
 
             $quotaAccount = $this->ensureQuotaAccount((int) $session->shop_id);
             $this->recordQuotaEvent($quotaAccount, $session, 'media_attached', 0, [
@@ -156,6 +126,84 @@ class BeautySessionService
         });
 
         return $session->fresh($this->sessionRelations());
+    }
+
+    public function startAnalysis(string $publicId, User $actor): array
+    {
+        $session = $this->resolveSession($publicId);
+        $this->authorizeShop($actor, (int) $session->shop_id);
+        $this->assertMediaReadyForAnalysis($session);
+
+        $activeTask = $session->aiTasks()
+            ->where('provider', PerfectCorpTaskService::PROVIDER)
+            ->where('task_type', PerfectCorpTaskService::TASK_TYPE)
+            ->whereIn('status', ['queued', 'processing'])
+            ->latest('id')
+            ->first();
+
+        if ($activeTask) {
+            return $this->analysisPayload($session->fresh($this->sessionRelations()), $activeTask);
+        }
+
+        $consumeQuota = !$this->perfectCorpDemoMode();
+        $quotaAccount = $this->ensureQuotaAccount((int) $session->shop_id);
+        $this->assertQuotaAvailable($quotaAccount, $consumeQuota);
+
+        /** @var BeautyAiTask $task */
+        $task = DB::transaction(function () use ($session, $quotaAccount) {
+            $session->forceFill([
+                'session_state' => BeautySession::STATE_ANALYSIS_PENDING,
+                'failed_at' => null,
+            ])->save();
+
+            $task = BeautyAiTask::create([
+                'beauty_session_id' => $session->id,
+                'provider' => PerfectCorpTaskService::PROVIDER,
+                'task_type' => PerfectCorpTaskService::TASK_TYPE,
+                'status' => 'queued',
+                'request_payload' => [
+                    'media_asset_id' => $session->primary_media_asset_id,
+                    'object_key' => $session->primaryMediaAsset?->object_key,
+                ],
+                'queued_at' => now(),
+            ]);
+
+            BeautyAnalysisResult::create([
+                'beauty_session_id' => $session->id,
+                'beauty_ai_task_id' => $task->id,
+                'provider' => PerfectCorpTaskService::PROVIDER,
+                'status' => 'pending',
+                'summary_payload' => [
+                    'analysis_mode' => $this->perfectCorpDemoMode() ? 'demo' : 'live',
+                    'message' => 'Analysis queued.',
+                ],
+                'normalized_traits' => $this->snapshotTraits($session->currentSnapshot),
+                'recommendation_count' => 0,
+            ]);
+
+            $this->recordQuotaEvent($quotaAccount, $session, 'analysis_started', 0, [
+                'demo_mode' => $this->perfectCorpDemoMode(),
+                'task_id' => $task->id,
+            ]);
+
+            return $task;
+        });
+
+        CreatePerfectCorpAnalysisTask::dispatch($task->id);
+
+        return $this->analysisPayload(
+            $session->fresh($this->sessionRelations()),
+            $task->fresh(),
+        );
+    }
+
+    public function analysisStatus(int $taskId, User $actor): array
+    {
+        $task = $this->resolveAnalysisTask($taskId);
+        $session = $task->beautySession->load($this->sessionRelations());
+        $this->authorizeShop($actor, (int) $session->shop_id);
+
+        return $this->analysisPayload($session, $task->fresh());
     }
 
     public function generateRecommendations(string $publicId, User $actor, int $limit = 10): array
@@ -171,93 +219,7 @@ class BeautySessionService
 
         $input = $this->features->normalizeInput($this->snapshotTraits($snapshot));
 
-        $results = DB::transaction(function () use ($session, $input, $limit) {
-            BeautyRecommendation::query()
-                ->where('session_id', $session->public_id)
-                ->delete();
-
-            $results = BeautyProductMapping::query()
-                ->with(['product.tags', 'product.shop'])
-                ->whereHas('product', fn ($query) => $query->where('shop_id', $session->shop_id))
-                ->get()
-                ->map(function (BeautyProductMapping $mapping) use ($input) {
-                    return $this->scoring->score(
-                        $input,
-                        $mapping,
-                        $mapping->product,
-                        $this->features->productTags($mapping->product),
-                    );
-                })
-                ->sortByDesc(fn ($result) => $result->score)
-                ->take($limit)
-                ->values();
-
-            foreach ($results as $result) {
-                BeautyRecommendation::create([
-                    'customer_id' => $session->customer_id,
-                    'profile_id' => $session->user_profile_id,
-                    'session_id' => $session->public_id,
-                    'product_id' => $result->productId,
-                    'score' => $result->score,
-                    'confidence' => $result->confidence,
-                    'reasons_json' => $result->reasons,
-                    'warnings_json' => $result->warnings,
-                    'breakdown_json' => $result->breakdown,
-                    'score_version' => $this->scoreVersion->current(),
-                    'accepted' => null,
-                    'dismissed' => null,
-                ]);
-            }
-
-            $task = BeautyAiTask::query()
-                ->where('beauty_session_id', $session->id)
-                ->where('provider', 'perfectcorp_placeholder')
-                ->where('task_type', 'beauty_analysis')
-                ->latest('id')
-                ->first();
-
-            if ($task) {
-                $task->forceFill([
-                    'status' => 'completed',
-                    'response_payload' => [
-                        'recommendation_count' => $results->count(),
-                        'completed_with' => 'deterministic_phase4_foundation',
-                    ],
-                    'completed_at' => now(),
-                ])->save();
-            }
-
-            BeautyAnalysisResult::updateOrCreate(
-                [
-                    'beauty_session_id' => $session->id,
-                    'provider' => 'perfectcorp_placeholder',
-                ],
-                [
-                    'beauty_ai_task_id' => $task?->id,
-                    'status' => 'completed',
-                    'summary_payload' => [
-                        'placeholder' => true,
-                        'message' => 'Recommendations derived from stored consultation criteria.',
-                    ],
-                    'normalized_traits' => $input,
-                    'recommendation_count' => $results->count(),
-                    'completed_at' => now(),
-                ],
-            );
-
-            $session->forceFill([
-                'session_state' => BeautySession::STATE_ANALYSIS_COMPLETED,
-            ])->save();
-
-            $quotaAccount = $this->ensureQuotaAccount((int) $session->shop_id);
-            $this->recordQuotaEvent($quotaAccount, $session, 'recommendations_generated', 1, [
-                'recommendation_count' => $results->count(),
-            ]);
-
-            return $results;
-        });
-
-        return $results->map->toArray()->all();
+        return $this->persistRecommendations($session, $input, $limit)->map->toArray()->all();
     }
 
     public function saveSession(string $publicId, User $actor, array $payload = []): BeautySession
@@ -317,6 +279,140 @@ class BeautySessionService
             ->with($this->sessionRelations())
             ->where('public_id', $publicId)
             ->firstOrFail();
+    }
+
+    public function completeAnalysisTask(
+        BeautyAiTask $task,
+        array $summaryPayload,
+        array $normalizedTraits,
+        array $providerPayload = [],
+        bool $consumeQuota = false,
+        int $limit = 10,
+    ): BeautyAiTask {
+        /** @var BeautyAiTask $freshTask */
+        $freshTask = DB::transaction(function () use (
+            $task,
+            $summaryPayload,
+            $normalizedTraits,
+            $providerPayload,
+            $consumeQuota,
+            $limit,
+        ) {
+            $task = $task->fresh();
+            $session = $task->beautySession()->with($this->sessionRelations())->firstOrFail();
+            $profile = $session->beautyProfile;
+
+            if (!$profile) {
+                throw new RuntimeException('A beauty profile is required before analysis can be completed.');
+            }
+
+            $snapshot = BeautyProfileSnapshot::create([
+                'beauty_profile_id' => $profile->id,
+                'beauty_session_id' => $session->id,
+                'customer_id' => $session->customer_id,
+                'user_profile_id' => $session->user_profile_id,
+                'source' => $consumeQuota ? 'perfect_corp' : 'perfect_corp_demo',
+                'customer_name' => $profile->customer_name,
+                'contact_email' => $profile->contact_email,
+                'contact_phone' => $profile->contact_phone,
+                'skin_type_tags' => $normalizedTraits['skin_type_tags'] ?? [],
+                'tone_tags' => $normalizedTraits['tone_tags'] ?? [],
+                'undertone_tags' => $normalizedTraits['undertone_tags'] ?? [],
+                'concern_tags' => $normalizedTraits['concern_tags'] ?? [],
+                'ingredient_tags' => $normalizedTraits['ingredient_tags'] ?? [],
+                'avoid_tags' => $normalizedTraits['avoid_tags'] ?? [],
+                'notes' => $session->notes,
+                'snapshot_payload' => [
+                    'analysis_task_id' => $task->id,
+                    'analysis_provider' => $task->provider,
+                    'analysis_summary' => $summaryPayload,
+                ],
+            ]);
+
+            $session->forceFill([
+                'current_snapshot_id' => $snapshot->id,
+                'session_state' => BeautySession::STATE_ANALYSIS_COMPLETED,
+                'failed_at' => null,
+            ])->save();
+
+            $task->forceFill([
+                'status' => 'completed',
+                'response_payload' => $providerPayload,
+                'error_message' => null,
+                'completed_at' => now(),
+            ])->save();
+
+            $results = $this->persistRecommendations($session, $normalizedTraits, $limit);
+
+            BeautyAnalysisResult::updateOrCreate(
+                [
+                    'beauty_session_id' => $session->id,
+                    'beauty_ai_task_id' => $task->id,
+                    'provider' => $task->provider,
+                ],
+                [
+                    'status' => 'completed',
+                    'summary_payload' => $summaryPayload,
+                    'normalized_traits' => $normalizedTraits,
+                    'recommendation_count' => $results->count(),
+                    'completed_at' => now(),
+                ],
+            );
+
+            $quotaAccount = $this->ensureQuotaAccount((int) $session->shop_id);
+            $this->recordQuotaEvent($quotaAccount, $session, 'analysis_completed', $consumeQuota ? 1 : 0, [
+                'task_id' => $task->id,
+                'demo_mode' => !$consumeQuota,
+                'recommendation_count' => $results->count(),
+            ]);
+
+            return $task->fresh();
+        });
+
+        return $freshTask;
+    }
+
+    public function failAnalysisTask(BeautyAiTask $task, string $message, array $providerPayload = []): BeautyAiTask
+    {
+        /** @var BeautyAiTask $failedTask */
+        $failedTask = DB::transaction(function () use ($task, $message, $providerPayload) {
+            $task = $task->fresh();
+            $session = $task->beautySession()->with($this->sessionRelations())->firstOrFail();
+
+            $task->forceFill([
+                'status' => 'failed',
+                'response_payload' => $providerPayload,
+                'error_message' => $message,
+                'completed_at' => now(),
+            ])->save();
+
+            BeautyAnalysisResult::updateOrCreate(
+                [
+                    'beauty_session_id' => $session->id,
+                    'beauty_ai_task_id' => $task->id,
+                    'provider' => $task->provider,
+                ],
+                [
+                    'status' => 'failed',
+                    'summary_payload' => [
+                        'analysis_mode' => $this->perfectCorpDemoMode() ? 'demo' : 'live',
+                        'message' => $message,
+                    ],
+                    'normalized_traits' => $this->snapshotTraits($session->currentSnapshot),
+                    'recommendation_count' => 0,
+                    'completed_at' => now(),
+                ],
+            );
+
+            $session->forceFill([
+                'session_state' => BeautySession::STATE_FAILED,
+                'failed_at' => now(),
+            ])->save();
+
+            return $task->fresh();
+        });
+
+        return $failedTask;
     }
 
     protected function upsertBeautyProfile(
@@ -413,11 +509,11 @@ class BeautySessionService
         return BeautyQuotaAccount::firstOrCreate(
             [
                 'shop_id' => $shopId,
-                'provider' => 'perfectcorp_placeholder',
+                'provider' => PerfectCorpTaskService::PROVIDER,
                 'feature_key' => 'seller_consultation',
             ],
             [
-                'plan_code' => 'phase4-foundation',
+                'plan_code' => 'phase5-perfectcorp-p0',
                 'allocated_units' => null,
                 'used_units' => 0,
             ],
@@ -482,6 +578,11 @@ class BeautySessionService
         ];
     }
 
+    public function snapshotTraitsForAnalysis(BeautySession $session): array
+    {
+        return $this->snapshotTraits($session->currentSnapshot);
+    }
+
     protected function sessionRelations(): array
     {
         return [
@@ -496,5 +597,128 @@ class BeautySessionService
             'analysisResults',
             'quotaEvents',
         ];
+    }
+
+    protected function persistRecommendations(BeautySession $session, array $input, int $limit)
+    {
+        BeautyRecommendation::query()
+            ->where('session_id', $session->public_id)
+            ->delete();
+
+        $results = BeautyProductMapping::query()
+            ->with(['product.tags', 'product.shop'])
+            ->whereHas('product', fn ($query) => $query->where('shop_id', $session->shop_id))
+            ->get()
+            ->map(function (BeautyProductMapping $mapping) use ($input) {
+                return $this->scoring->score(
+                    $input,
+                    $mapping,
+                    $mapping->product,
+                    $this->features->productTags($mapping->product),
+                );
+            })
+            ->sortByDesc(fn ($result) => $result->score)
+            ->take($limit)
+            ->values();
+
+        foreach ($results as $result) {
+            BeautyRecommendation::create([
+                'customer_id' => $session->customer_id,
+                'profile_id' => $session->user_profile_id,
+                'session_id' => $session->public_id,
+                'product_id' => $result->productId,
+                'score' => $result->score,
+                'confidence' => $result->confidence,
+                'reasons_json' => $result->reasons,
+                'warnings_json' => $result->warnings,
+                'breakdown_json' => $result->breakdown,
+                'score_version' => $this->scoreVersion->current(),
+                'accepted' => null,
+                'dismissed' => null,
+            ]);
+        }
+
+        return $results;
+    }
+
+    protected function resolveAnalysisTask(int $taskId): BeautyAiTask
+    {
+        return BeautyAiTask::query()
+            ->with(['beautySession' => fn ($query) => $query->with($this->sessionRelations())])
+            ->findOrFail($taskId);
+    }
+
+    protected function analysisPayload(BeautySession $session, BeautyAiTask $task): array
+    {
+        $analysisResult = BeautyAnalysisResult::query()
+            ->where('beauty_ai_task_id', $task->id)
+            ->latest('id')
+            ->first();
+
+        return [
+            'session' => $session,
+            'task' => $task,
+            'analysis_result' => $analysisResult,
+            'recommendations' => $this->storedRecommendations($session),
+        ];
+    }
+
+    protected function storedRecommendations(BeautySession $session): array
+    {
+        return BeautyRecommendation::query()
+            ->with('product')
+            ->where('session_id', $session->public_id)
+            ->orderByDesc('score')
+            ->get()
+            ->map(fn (BeautyRecommendation $recommendation) => [
+                'product_id' => (int) $recommendation->product_id,
+                'score' => (int) $recommendation->score,
+                'confidence' => $recommendation->confidence,
+                'reasons' => $recommendation->reasons_json ?? [],
+                'warnings' => $recommendation->warnings_json ?? [],
+                'breakdown' => $recommendation->breakdown_json ?? [],
+                'product' => [
+                    'id' => (int) $recommendation->product?->id,
+                    'name' => $recommendation->product?->name,
+                    'slug' => $recommendation->product?->slug,
+                    'image' => $recommendation->product?->image,
+                    'shop_id' => $recommendation->product?->shop_id,
+                ],
+            ])
+            ->all();
+    }
+
+    protected function assertMediaReadyForAnalysis(BeautySession $session): void
+    {
+        if (!$session->primaryMediaAsset) {
+            throw new RuntimeException('Attach a private consultation media asset before starting analysis.');
+        }
+
+        if ($session->primaryMediaAsset->status !== 'confirmed') {
+            throw new RuntimeException('Only confirmed consultation media assets can be analyzed.');
+        }
+
+        if ($session->primaryMediaAsset->visibility !== 'private') {
+            throw new RuntimeException('Consultation analysis requires a private media asset.');
+        }
+    }
+
+    protected function assertQuotaAvailable(BeautyQuotaAccount $quotaAccount, bool $consumeQuota): void
+    {
+        if (!$consumeQuota) {
+            return;
+        }
+
+        if (
+            $quotaAccount->allocated_units !== null
+            && (int) $quotaAccount->used_units >= (int) $quotaAccount->allocated_units
+        ) {
+            throw new RuntimeException('The Perfect Corp consultation quota has been exhausted for this shop.');
+        }
+    }
+
+    protected function perfectCorpDemoMode(): bool
+    {
+        return (bool) config('services.perfect_corp.demo_mode', true);
     }
 }

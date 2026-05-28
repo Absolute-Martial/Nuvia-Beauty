@@ -89,6 +89,22 @@ class BeautySessionController extends Controller
         ]);
     }
 
+    public function startAnalysis(Request $request, string $id): JsonResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+        $payload = $this->sessions->startAnalysis($id, $actor);
+
+        return response()->json([
+            'data' => [
+                'session' => $this->serializeSession($payload['session']),
+                'task' => $this->serializeTask($payload['task']),
+                'analysis_result' => $this->serializeAnalysisResult($payload['analysis_result']),
+                'recommendations' => $payload['recommendations'],
+            ],
+        ], 202);
+    }
+
     public function save(Request $request, string $id): JsonResponse
     {
         /** @var User $actor */
@@ -140,6 +156,22 @@ class BeautySessionController extends Controller
                     $actor,
                     (int) ($validated['limit'] ?? 10),
                 ),
+            ],
+        ]);
+    }
+
+    public function analysisStatus(Request $request, int $taskId): JsonResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+        $payload = $this->sessions->analysisStatus($taskId, $actor);
+
+        return response()->json([
+            'data' => [
+                'session' => $this->serializeSession($payload['session']),
+                'task' => $this->serializeTask($payload['task']),
+                'analysis_result' => $this->serializeAnalysisResult($payload['analysis_result']),
+                'recommendations' => $payload['recommendations'],
             ],
         ]);
     }
@@ -214,6 +246,42 @@ class BeautySessionController extends Controller
                 'recommendation_count' => (int) $result->recommendation_count,
                 'completed_at' => optional($result->completed_at)?->toIso8601String(),
             ])->values()->all(),
+        ];
+    }
+
+    protected function serializeTask($task): ?array
+    {
+        if (!$task) {
+            return null;
+        }
+
+        return [
+            'id' => (int) $task->id,
+            'provider' => $task->provider,
+            'task_type' => $task->task_type,
+            'status' => $task->status,
+            'provider_task_id' => $task->provider_task_id,
+            'error_message' => $task->error_message,
+            'queued_at' => optional($task->queued_at)?->toIso8601String(),
+            'started_at' => optional($task->started_at)?->toIso8601String(),
+            'completed_at' => optional($task->completed_at)?->toIso8601String(),
+        ];
+    }
+
+    protected function serializeAnalysisResult($result): ?array
+    {
+        if (!$result) {
+            return null;
+        }
+
+        return [
+            'id' => (int) $result->id,
+            'provider' => $result->provider,
+            'status' => $result->status,
+            'summary' => $result->summary_payload ?? [],
+            'normalized_traits' => $result->normalized_traits ?? [],
+            'recommendation_count' => (int) $result->recommendation_count,
+            'completed_at' => optional($result->completed_at)?->toIso8601String(),
         ];
     }
 }

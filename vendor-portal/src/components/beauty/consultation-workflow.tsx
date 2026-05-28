@@ -7,22 +7,27 @@ import Loader from '@/components/ui/loader/loader';
 import PageHeading from '@/components/common/page-heading';
 import TextArea from '@/components/ui/text-area';
 import { selectStyles } from '@/components/ui/select/select.styles';
+import AnalysisSummaryCard from './analysis-summary-card';
+import AnalysisTaskCard from './analysis-task-card';
 import RecommendationCard from './recommendation-card';
 import ConsultationStatusBadge from './consultation-status-badge';
 import { userClient } from '@/data/client/user';
 import {
-  BeautyConsultationSession,
+  BeautyAnalysisStatusPayload,
   BeautyConsultationRecommendation,
+  BeautyConsultationSession,
 } from '@/data/client/beauty-consultation';
 import {
   useAttachBeautyMediaMutation,
+  useBeautyAnalysisStatusQuery,
   useBeautyRecommendationsMutation,
   useCreateBeautySessionMutation,
   useDiscardBeautySessionMutation,
   useSaveBeautySessionMutation,
+  useStartBeautyAnalysisMutation,
   useUploadBeautyMediaMutation,
 } from '@/data/beauty-consultation';
-import { ChangeEvent, useMemo, useState } from 'react';
+import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 
 type ShopOption = {
   id: number;
@@ -89,6 +94,8 @@ export default function ConsultationWorkflow({
   });
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerOption | null>(null);
   const [activeSession, setActiveSession] = useState<BeautyConsultationSession | null>(null);
+  const [activeAnalysisTaskId, setActiveAnalysisTaskId] = useState<number | null>(null);
+  const [analysisStatus, setAnalysisStatus] = useState<BeautyAnalysisStatusPayload['data'] | null>(null);
   const [existingMediaId, setExistingMediaId] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [recommendations, setRecommendations] = useState<BeautyConsultationRecommendation[]>([]);
@@ -100,12 +107,21 @@ export default function ConsultationWorkflow({
     useAttachBeautyMediaMutation();
   const { mutateAsync: uploadMedia, isLoading: uploadingMedia } =
     useUploadBeautyMediaMutation();
+  const { mutateAsync: startAnalysis, isLoading: startingAnalysis } =
+    useStartBeautyAnalysisMutation();
   const { mutateAsync: loadRecommendations, isLoading: loadingRecommendations } =
     useBeautyRecommendationsMutation();
   const { mutateAsync: saveSession, isLoading: savingSession } =
     useSaveBeautySessionMutation();
   const { mutateAsync: discardSession, isLoading: discardingSession } =
     useDiscardBeautySessionMutation();
+  const {
+    analysisStatus: polledAnalysisStatus,
+    isLoading: loadingAnalysisStatus,
+  } = useBeautyAnalysisStatusQuery(
+    activeAnalysisTaskId,
+    Boolean(activeAnalysisTaskId) && activeSession?.session_state !== 'saved' && activeSession?.session_state !== 'discarded',
+  );
 
   const currentShop = useMemo(
     () => shops.find((shop) => shop.id === draft.shopId) ?? null,
@@ -115,6 +131,26 @@ export default function ConsultationWorkflow({
   const isTerminalState =
     activeSession?.session_state === 'saved' ||
     activeSession?.session_state === 'discarded';
+
+  useEffect(() => {
+    if (!polledAnalysisStatus) {
+      return;
+    }
+
+    setAnalysisStatus(polledAnalysisStatus);
+    setActiveSession(polledAnalysisStatus.session);
+    setRecommendations(polledAnalysisStatus.recommendations ?? []);
+  }, [polledAnalysisStatus]);
+
+  useEffect(() => {
+    const perfectCorpTask = activeSession?.ai_tasks
+      ?.filter((task) => task.provider === 'perfect_corp_skin_analysis')
+      ?.sort((left, right) => right.id - left.id)?.[0];
+
+    if (perfectCorpTask?.id) {
+      setActiveAnalysisTaskId(perfectCorpTask.id);
+    }
+  }, [activeSession]);
 
   async function loadCustomerOptions(inputValue: string) {
     const data = await userClient.fetchCustomers({ name: inputValue, page: 1, limit: 10 });
@@ -137,6 +173,8 @@ export default function ConsultationWorkflow({
 
   const resetForNewSession = () => {
     setActiveSession(null);
+    setActiveAnalysisTaskId(null);
+    setAnalysisStatus(null);
     setRecommendations([]);
     setExistingMediaId('');
     setSelectedFile(null);
@@ -180,6 +218,8 @@ export default function ConsultationWorkflow({
       });
 
       setActiveSession(response.data.session);
+      setActiveAnalysisTaskId(null);
+      setAnalysisStatus(null);
       setRecommendations([]);
     } catch (error: any) {
       setInlineError(error?.response?.data?.message ?? 'Failed to create the consultation session.');
@@ -200,6 +240,9 @@ export default function ConsultationWorkflow({
         mediaAssetId: Number(existingMediaId),
       });
       setActiveSession(response.data.session);
+      setActiveAnalysisTaskId(null);
+      setAnalysisStatus(null);
+      setRecommendations([]);
     } catch (error: any) {
       setInlineError(error?.response?.data?.message ?? 'Failed to attach the existing media asset.');
     }
@@ -233,9 +276,36 @@ export default function ConsultationWorkflow({
         file: selectedFile,
       });
       setActiveSession(response.data.session);
+      setActiveAnalysisTaskId(null);
+      setAnalysisStatus(null);
+      setRecommendations([]);
       setSelectedFile(null);
     } catch (error: any) {
       setInlineError(error?.message ?? 'Failed to upload and attach consultation media.');
+    }
+  };
+
+  const handleStartAnalysis = async () => {
+    if (!activeSession) {
+      setInlineError('Create a consultation session first.');
+      return;
+    }
+
+    if (!activeSession.media_asset) {
+      setInlineError('Attach a private consultation image before starting analysis.');
+      return;
+    }
+
+    setInlineError(null);
+
+    try {
+      const response = await startAnalysis({ sessionId: activeSession.id });
+      setActiveSession(response.data.session);
+      setAnalysisStatus(response.data);
+      setActiveAnalysisTaskId(response.data.task?.id ?? null);
+      setRecommendations(response.data.recommendations ?? []);
+    } catch (error: any) {
+      setInlineError(error?.response?.data?.message ?? 'Failed to start the consultation analysis.');
     }
   };
 
@@ -250,14 +320,13 @@ export default function ConsultationWorkflow({
     try {
       const response = await loadRecommendations({ sessionId: activeSession.id, limit: 8 });
       setRecommendations(response.data.recommendations ?? []);
-      const refreshed = {
+      setActiveSession({
         ...activeSession,
         session_state:
           activeSession.session_state === 'saved'
             ? activeSession.session_state
             : 'analysis_completed',
-      };
-      setActiveSession(refreshed);
+      });
     } catch (error: any) {
       setInlineError(error?.response?.data?.message ?? 'Failed to load recommendations.');
     }
@@ -310,7 +379,7 @@ export default function ConsultationWorkflow({
       <Card className="flex flex-col gap-4">
         <PageHeading title="Beauty consultations" />
         <p className="text-sm text-body">
-          Start a seller-assisted consultation, attach a private input image through the Phase 4 storage flow, review deterministic recommendations, then save or discard the session.
+          Start a seller-assisted consultation, attach a private input image through the storage flow, run the Perfect Corp P0 demo analysis lifecycle, review normalized recommendations, then save or discard the session.
         </p>
         {inlineError ? (
           <Alert variant="error" message={inlineError} />
@@ -562,9 +631,41 @@ export default function ConsultationWorkflow({
       <Card className="space-y-5">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold text-heading">3. Recommendations</h2>
+            <h2 className="text-base font-semibold text-heading">3. Analysis</h2>
             <p className="mt-1 text-sm text-body">
-              Recommendations are generated from the stored consultation profile and existing beauty product mappings.
+              Start the Perfect Corp P0 flow in backend-only demo mode, poll task status, and review the normalized result.
+            </p>
+          </div>
+          <Button
+            type="button"
+            loading={startingAnalysis}
+            disabled={!activeSession || !activeSession.media_asset || startingAnalysis || isTerminalState}
+            onClick={handleStartAnalysis}
+          >
+            {analysisStatus?.task?.status === 'completed' ? 'Re-run analysis' : 'Start analysis'}
+          </Button>
+        </div>
+
+        {!activeSession ? (
+          <Alert message="Create a consultation session before starting analysis." />
+        ) : loadingAnalysisStatus && activeAnalysisTaskId ? (
+          <Loader text="Refreshing analysis status..." />
+        ) : analysisStatus?.task ? (
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+            <AnalysisTaskCard task={analysisStatus.task} />
+            <AnalysisSummaryCard analysisResult={analysisStatus.analysis_result} />
+          </div>
+        ) : (
+          <Alert message="Start the analysis after attaching private media to see normalized Perfect Corp demo output." />
+        )}
+      </Card>
+
+      <Card className="space-y-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-heading">4. Recommendations</h2>
+            <p className="mt-1 text-sm text-body">
+              Recommendations are refreshed from the normalized analysis snapshot and existing beauty product mappings.
             </p>
           </div>
           <Button
@@ -573,7 +674,7 @@ export default function ConsultationWorkflow({
             disabled={!activeSession || loadingRecommendations || isTerminalState}
             onClick={handleLoadRecommendations}
           >
-            View recommendations
+            Refresh recommendations
           </Button>
         </div>
 
@@ -597,7 +698,7 @@ export default function ConsultationWorkflow({
 
       <Card className="space-y-5">
         <div>
-          <h2 className="text-base font-semibold text-heading">4. Save or discard</h2>
+          <h2 className="text-base font-semibold text-heading">5. Save or discard</h2>
           <p className="mt-1 text-sm text-body">
             Save the consultation when the seller wants to keep the session record, or discard it to close the workflow.
           </p>

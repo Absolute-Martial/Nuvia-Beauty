@@ -270,8 +270,8 @@ database/migrations/2026_05_28_000009_create_beauty_ai_tasks_table.php
 
 Purpose:
 
-- stores placeholder provider task metadata for future Perfect Corp integration
-- allows the seller consultation foundation to track queued and completed analysis without calling the provider yet
+- stores Perfect Corp P0 analysis task metadata for each seller consultation
+- supports queued demo-first task creation, live provider polling, completion, and failure states
 
 ### `beauty_analysis_results`
 
@@ -283,8 +283,8 @@ database/migrations/2026_05_28_000010_create_beauty_analysis_results_table.php
 
 Purpose:
 
-- stores placeholder analysis state and normalized consultation traits
-- records deterministic recommendation counts against a session even before provider integration exists
+- stores normalized Perfect Corp demo/live analysis output per session task
+- records recommendation counts after the normalized snapshot is used to regenerate seller recommendations
 
 ### `beauty_quota_accounts`
 
@@ -296,8 +296,8 @@ database/migrations/2026_05_28_000011_create_beauty_quota_accounts_table.php
 
 Purpose:
 
-- creates the provider/quota accounting foundation required by the Phase 4 gate to Perfect Corp
-- currently tracks per-shop `seller_consultation` usage under a placeholder provider account
+- tracks provider quota state for seller consultation analysis at the shop level
+- demo mode records lifecycle events without consuming quota units
 
 ### `beauty_quota_events`
 
@@ -309,7 +309,7 @@ database/migrations/2026_05_28_000012_create_beauty_quota_events_table.php
 
 Purpose:
 
-- records quota-impacting consultation events such as session creation, media attachment, and recommendation generation
+- records quota-impacting consultation events such as session creation, media attachment, analysis start, and analysis completion
 
 ### `audit_logs`
 

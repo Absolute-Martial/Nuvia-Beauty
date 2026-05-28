@@ -87,6 +87,50 @@ export interface BeautyConsultationRecommendation {
   };
 }
 
+export interface BeautyAnalysisStatusPayload {
+  data: {
+    session: BeautyConsultationSession;
+    task: {
+      id: number;
+      provider: string;
+      task_type: string;
+      status: string;
+      provider_task_id?: string | null;
+      error_message?: string | null;
+      queued_at?: string | null;
+      started_at?: string | null;
+      completed_at?: string | null;
+    } | null;
+    analysis_result: {
+      id: number;
+      provider: string;
+      status: string;
+      summary: {
+        analysis_mode?: string;
+        provider?: string;
+        demo_mode?: boolean;
+        message?: string;
+        skin_type?: string;
+        tone?: string;
+        undertone?: string;
+        key_concerns?: string[];
+        observations?: string[];
+      };
+      normalized_traits: {
+        skin_type_tags: string[];
+        tone_tags: string[];
+        undertone_tags: string[];
+        concern_tags: string[];
+        ingredient_tags: string[];
+        avoid_tags: string[];
+      };
+      recommendation_count: number;
+      completed_at?: string | null;
+    } | null;
+    recommendations: BeautyConsultationRecommendation[];
+  };
+}
+
 export interface BeautyUploadSlotResponse {
   data: {
     media_id: number;
@@ -142,6 +186,17 @@ export const beautyConsultationClient = {
     return HttpClient.post<SessionResponse>(
       `${API_ENDPOINTS.BEAUTY_SESSIONS}/${sessionId}/attach-media`,
       { media_asset_id: mediaAssetId },
+    );
+  },
+  startAnalysis(sessionId: string) {
+    return HttpClient.post<BeautyAnalysisStatusPayload>(
+      `${API_ENDPOINTS.BEAUTY_SESSIONS}/${sessionId}/analysis/start`,
+      {},
+    );
+  },
+  getAnalysisStatus(taskId: number) {
+    return HttpClient.get<BeautyAnalysisStatusPayload>(
+      `${API_ENDPOINTS.BEAUTY_ANALYSIS}/${taskId}/status`,
     );
   },
   saveSession(sessionId: string, payload?: { notes?: string; accepted_recommendation_ids?: number[] }) {

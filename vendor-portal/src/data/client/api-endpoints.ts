@@ -102,6 +102,7 @@ export const API_ENDPOINTS = {
   OWNERSHIP_TRANSFER: 'ownership-transfer',
   BEAUTY_PRODUCT_MAPPINGS: 'v1/beauty/product-mappings',
   BEAUTY_SESSIONS: 'v1/beauty/sessions',
+  BEAUTY_ANALYSIS: 'v1/beauty/analysis',
   STORAGE_UPLOAD_SLOTS: 'v1/storage/upload-slots',
   STORAGE_MEDIA: 'v1/storage/media',
 };

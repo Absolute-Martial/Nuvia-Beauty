@@ -1,6 +1,6 @@
 # Backend Environment
 
-Current backend environment documentation for Phase 4.
+Current backend environment documentation through Phase 5.
 
 ## Core runtime variables
 
@@ -112,6 +112,28 @@ These values must remain backend-only:
 
 Do not place backend secrets in frontend `NEXT_PUBLIC_*` variables.
 
+## Phase 5 Perfect Corp variables
+
+| Variable | Purpose | Secret |
+|---|---|---|
+| `PERFECT_CORP_API_BASE_URL` | provider base URL | no |
+| `PERFECT_CORP_API_KEY` | provider API key | yes |
+| `PERFECT_CORP_API_BEARER_KEY` | provider bearer key | yes |
+| `PERFECT_CORP_ENABLED` | live provider toggle | no |
+| `PERFECT_CORP_DEMO_MODE` | demo-first mode toggle | no |
+| `PERFECT_CORP_TIMEOUT_SECONDS` | provider HTTP timeout | no |
+| `PERFECT_CORP_POLL_INTERVAL_SECONDS` | live poll delay | no |
+| `PERFECT_CORP_MAX_ATTEMPTS` | maximum live poll attempts | no |
+
+Safe Phase 5 default:
+
+```text
+PERFECT_CORP_ENABLED=false
+PERFECT_CORP_DEMO_MODE=true
+```
+
+Phase 5 uses backend-only Perfect Corp integration. The vendor frontend only receives normalized analysis summaries and recommendation output.
+
 ## Current runtime note
 
 For production bootstrap in `docker-compose.production.yml`, backend startup explicitly forces:
@@ -123,6 +145,13 @@ QUEUE_CONNECTION=sync
 ```
 
 This avoids the existing runtime dependency on PHP Redis extensions during migrations and early boot.
+
+## Queue worker note
+
+Phase 5 dispatches `CreatePerfectCorpAnalysisTask` and `PollPerfectCorpAnalysisTask`.
+
+- `QUEUE_CONNECTION=sync` is acceptable for local validation and demo mode.
+- async environments should run a queue worker before live Perfect Corp mode is enabled.
 
 ## Console-safe settings fallback
 
