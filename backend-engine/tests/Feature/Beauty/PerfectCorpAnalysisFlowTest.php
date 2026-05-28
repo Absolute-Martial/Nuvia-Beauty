@@ -17,6 +17,7 @@ use Marvel\Database\Models\Shop;
 use Marvel\Database\Models\User;
 use Marvel\Enums\Permission as PermissionEnum;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class PerfectCorpAnalysisFlowTest extends TestCase
@@ -27,6 +28,7 @@ class PerfectCorpAnalysisFlowTest extends TestCase
     {
         parent::setUp();
 
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
         Config::set('queue.default', 'sync');
         Config::set('services.perfect_corp.demo_mode', true);
         Config::set('services.perfect_corp.enabled', false);
