@@ -124,6 +124,8 @@ Do not place backend secrets in frontend `NEXT_PUBLIC_*` variables.
 | `PERFECT_CORP_TIMEOUT_SECONDS` | provider HTTP timeout | no |
 | `PERFECT_CORP_POLL_INTERVAL_SECONDS` | live poll delay | no |
 | `PERFECT_CORP_MAX_ATTEMPTS` | maximum live poll attempts | no |
+| `BEAUTY_DEMO_ALLOW_PRODUCTION` | explicit override for demo prep/audit in `APP_ENV=production` | no |
+| `BEAUTY_DEMO_AUTO_PREPARE` | auto-run Phase 6 demo prep during `backend-init` | no |
 
 Safe Phase 5 default:
 
@@ -134,6 +136,22 @@ PERFECT_CORP_DEMO_MODE=true
 
 Phase 5 uses backend-only Perfect Corp integration. The vendor frontend only receives normalized analysis summaries and recommendation output.
 `PerfectCorpClient::selfCheck()` now stays no-op while disabled or in demo mode, and only performs a live connectivity probe when both `PERFECT_CORP_ENABLED=true` and `PERFECT_CORP_DEMO_MODE=false`.
+
+## Phase 6 demo deployment variables
+
+| Variable | Purpose | Secret |
+|---|---|---|
+| `BEAUTY_DEMO_ALLOW_PRODUCTION` | permits `beauty:prepare-demo` and `beauty:audit-demo-readiness` while `APP_ENV=production` | no |
+| `BEAUTY_DEMO_AUTO_PREPARE` | runs demo prep and audit from `backend-init` after migrate + settings seed | no |
+
+Safe defaults:
+
+```text
+BEAUTY_DEMO_ALLOW_PRODUCTION=false
+BEAUTY_DEMO_AUTO_PREPARE=false
+```
+
+Use both only for a dedicated demo/staging deployment where you intentionally want the Phase 6 catalog and saved consultation to be bootstrapped on deploy.
 
 ## Current runtime note
 
@@ -161,6 +179,15 @@ Phase 5 dispatches `CreatePerfectCorpAnalysisTask` and `PollPerfectCorpAnalysisT
 For `APP_ENV=testing`, the command now allows a metadata-only fallback when `S3_BEAUTY_INPUTS_BUCKET` and `S3_BEAUTY_RESULTS_BUCKET` are unset. This keeps CI and local test runs green when no live S3-compatible object storage is exercised.
 
 This fallback is limited to the audit command path in testing. It does not relax runtime storage requirements for actual upload, confirm, signed download, or live analysis flows.
+
+## Demo catalog note
+
+The deterministic Phase 6 catalog is now curated from public beauty dataset samples and bundled in `backend-engine/database/seeders/data/phase6-demo-catalog.php`.
+
+- Sephora sample dataset rows provide named prestige-beauty products and tools.
+- Open Beauty Facts public API samples provide moisturizer and serum inventory variety.
+
+The generated `beauty:prepare-demo` report now includes a `catalog_sources` section so presenters can disclose where the demo assortment came from.
 
 ## Console-safe settings fallback
 

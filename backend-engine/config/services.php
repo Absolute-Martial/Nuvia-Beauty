@@ -41,4 +41,9 @@ return [
         'max_attempts' => env('PERFECT_CORP_MAX_ATTEMPTS', 3),
     ],
 
+    'beauty_demo' => [
+        'allow_production' => env('BEAUTY_DEMO_ALLOW_PRODUCTION', false),
+        'auto_prepare' => env('BEAUTY_DEMO_AUTO_PREPARE', false),
+    ],
+
 ];

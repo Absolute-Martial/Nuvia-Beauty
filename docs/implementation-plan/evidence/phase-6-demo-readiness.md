@@ -20,6 +20,7 @@ This page maps Phase 6 deliverables to the strongest current evidence in the rep
 | Phase 6 area | Requirement | Current evidence | Status |
 | --- | --- | --- | --- |
 | 6.1 Demo data seeding | Deterministic demo dataset can be prepared on a non-prod database | `Tests\\Feature\\Beauty\\BeautyDemoPreparationCommandTest`, `backend-engine/app/Console/Commands/BeautyPrepareDemoCommand.php`, `scripts/phase6-demo-readiness.sh` | Verified locally |
+| 6.1 Demo data seeding | Seeded demo catalog uses curated public beauty dataset samples and discloses those sources in the report | `backend-engine/database/seeders/data/phase6-demo-catalog.php`, `backend-engine/storage/app/beauty/phase6-demo-preparation-report.json` | Verified locally |
 | 6.1 Demo data seeding | Demo audit proves 10 mappings, saved session, completed analysis, 3 strong recs, 1 warning | `Tests\\Feature\\Beauty\\BeautyDemoPreparationCommandTest`, `backend-engine/app/Console/Commands/BeautyAuditDemoReadinessCommand.php` | Verified locally |
 | 6.2 Demo flow scripting | Presenter can follow a timed, repeatable script using built features only | `docs/product/demo-scenarios.md` | Updated, requires live rehearsal |
 | 6.3 QA evidence capture | Verification outputs are stored and reviewable | `docs/implementation-plan/evidence/backend-tests ...md`, `docs/implementation-plan/evidence/frontend-tests ...md`, `docs/implementation-plan/evidence/storage-tests ...md` | Verified locally |
@@ -47,6 +48,7 @@ Result:
 
 - passed
 - prepared a dedicated demo shop: `Nuvia Demo Beauty`
+- refreshed the demo catalog from curated public beauty dataset samples
 - generated `10` recommendations
 - generated `3` strong recommendations
 - generated `2` warning recommendations

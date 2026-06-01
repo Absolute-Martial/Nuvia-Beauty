@@ -26,6 +26,7 @@ Expected results:
 - `backend-engine/storage/app/beauty/phase6-demo-preparation-report.json` is created.
 - `backend-engine/storage/app/beauty/phase6-demo-audit-report.json` reports `passed: true`.
 - `PERFECT_CORP_DEMO_MODE=true`.
+- the preparation report lists `catalog_sources` for the public beauty datasets used to curate the demo assortment.
 - frontend apps are reachable on their configured demo URLs.
 
 Fallback:
@@ -57,6 +58,7 @@ Target length: 6-8 minutes.
 
 - “We can explain why a product appears, not just rank it.”
 - “The warning path is deliberate; the system does not hide contraindication-style avoid tags.”
+- “The seeded assortment is curated from public beauty dataset samples, so the catalog looks like something a user could plausibly test.”
 
 ## Segment 2 — Seller consultation with demo-mode analysis (3 minutes)
 

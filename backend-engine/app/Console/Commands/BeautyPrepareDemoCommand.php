@@ -12,6 +12,7 @@ class BeautyPrepareDemoCommand extends Command
         {--shop-id= : Optional demo shop override}
         {--consultant-user-id= : Optional consultant user override}
         {--mapping-limit=40 : Max products to import when a Kaggle source is provided}
+        {--allow-production : Explicitly allow demo preparation while APP_ENV=production}
         {--report-path= : Optional JSON report path}';
 
     protected $description = 'Prepare the deterministic Phase 6 demo dataset, consultation session, and analysis result.';
@@ -23,6 +24,7 @@ class BeautyPrepareDemoCommand extends Command
             'shop_id' => $this->option('shop-id') !== null ? (int) $this->option('shop-id') : null,
             'consultant_user_id' => $this->option('consultant-user-id') !== null ? (int) $this->option('consultant-user-id') : null,
             'mapping_limit' => (int) $this->option('mapping-limit'),
+            'allow_production' => (bool) $this->option('allow-production'),
             'report_path' => $this->option('report-path') ?: null,
         ]);
 

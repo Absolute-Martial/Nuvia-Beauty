@@ -50,7 +50,7 @@ class BeautyDemoPreparationService
 
     public function prepare(array $options = []): array
     {
-        $this->assertNonProduction();
+        $this->assertDemoExecutionAllowed($options);
 
         $shop = $this->resolveShop($options['shop_id'] ?? null, true, true);
         $consultant = $this->resolveConsultant($shop, $options['consultant_user_id'] ?? null);
@@ -83,6 +83,7 @@ class BeautyDemoPreparationService
                 'email' => $consultant->email,
             ],
             'demo_mode' => (bool) config('services.perfect_corp.demo_mode', true),
+            'catalog_sources' => $this->catalogSources(),
             'kaggle_import' => $importSummary,
             'mapping_summary' => $mappingSummary,
             'session_summary' => $sessionSummary,
@@ -104,7 +105,15 @@ class BeautyDemoPreparationService
             ->first();
 
         $checks = collect([
-            $this->check('non_production_environment', !app()->environment('production'), 'Demo tooling is blocked in production.'),
+            $this->check(
+                'non_production_environment',
+                !app()->environment('production') || $this->allowsProductionDemoOperations($options),
+                'Demo tooling is blocked in production unless BEAUTY_DEMO_ALLOW_PRODUCTION=true or --allow-production is provided.',
+                [
+                    'app_env' => app()->environment(),
+                    'allow_production' => $this->allowsProductionDemoOperations($options),
+                ],
+            ),
             $this->check('perfect_corp_demo_mode', (bool) config('services.perfect_corp.demo_mode', true), 'PERFECT_CORP_DEMO_MODE should stay enabled for the Phase 6 demo.'),
             $this->check('beauty_seed_command_present', $this->artisanCommandExists('beauty:seed-kaggle-catalog'), 'Kaggle-backed beauty mapping import command should be registered.'),
             $this->check('beauty_demo_prepare_command_present', $this->artisanCommandExists('beauty:prepare-demo'), 'Phase 6 demo preparation command should be registered.'),
@@ -626,78 +635,27 @@ class BeautyDemoPreparationService
 
     protected function demoCatalogTemplates(): array
     {
-        return [
-            [
-                'name' => 'Radiance Reset Cleanser',
-                'slug' => 'radiance-reset-cleanser',
-                'sku' => 'NUVIA-DEMO-001',
-                'price' => 22,
-                'description' => 'Foaming cleanser positioned for oily skin and post-workday refresh.',
-            ],
-            [
-                'name' => 'Clarity Boost Serum',
-                'slug' => 'clarity-boost-serum',
-                'sku' => 'NUVIA-DEMO-002',
-                'price' => 34,
-                'description' => 'Niacinamide-led serum for uneven-looking tone and texture support.',
-            ],
-            [
-                'name' => 'Hydra Balance Gel Cream',
-                'slug' => 'hydra-balance-gel-cream',
-                'sku' => 'NUVIA-DEMO-003',
-                'price' => 29,
-                'description' => 'Lightweight hydrator for combination routines needing moisture without heaviness.',
-            ],
-            [
-                'name' => 'Glow Guard SPF Moisturizer',
-                'slug' => 'glow-guard-spf-moisturizer',
-                'sku' => 'NUVIA-DEMO-004',
-                'price' => 31,
-                'description' => 'Daily finish product intentionally used for the warning-path recommendation example.',
-            ],
-            [
-                'name' => 'Velvet Repair Night Cream',
-                'slug' => 'velvet-repair-night-cream',
-                'sku' => 'NUVIA-DEMO-005',
-                'price' => 36,
-                'description' => 'Richer overnight cream for dry-skin contrast in the demo catalog.',
-            ],
-            [
-                'name' => 'Texture Tune Essence',
-                'slug' => 'texture-tune-essence',
-                'sku' => 'NUVIA-DEMO-006',
-                'price' => 27,
-                'description' => 'Essence positioned for smoothing and barrier support across mixed routines.',
-            ],
-            [
-                'name' => 'Calm Cloud Mist',
-                'slug' => 'calm-cloud-mist',
-                'sku' => 'NUVIA-DEMO-007',
-                'price' => 19,
-                'description' => 'Sensitive-skin contrast item for redness-aware routines.',
-            ],
-            [
-                'name' => 'Contour Restore Eye Gel',
-                'slug' => 'contour-restore-eye-gel',
-                'sku' => 'NUVIA-DEMO-008',
-                'price' => 26,
-                'description' => 'Targeted gel for firmness and hydration in the contrast set.',
-            ],
-            [
-                'name' => 'Barrier Silk Lotion',
-                'slug' => 'barrier-silk-lotion',
-                'sku' => 'NUVIA-DEMO-009',
-                'price' => 24,
-                'description' => 'Dryness-focused lotion used to round out the lower-score alternatives.',
-            ],
-            [
-                'name' => 'Tone Shift Vitamin Drops',
-                'slug' => 'tone-shift-vitamin-drops',
-                'sku' => 'NUVIA-DEMO-010',
-                'price' => 33,
-                'description' => 'Final demo item for uneven-tone narratives and presentation variety.',
-            ],
-        ];
+        /** @var array<int, array{name:string,slug:string,sku:string,price:int,description:string,source_dataset:string,source_brand:string,source_reference:string}> $catalog */
+        $catalog = require database_path('seeders/data/phase6-demo-catalog.php');
+
+        return $catalog;
+    }
+
+    protected function catalogSources(): array
+    {
+        return collect($this->demoCatalogTemplates())
+            ->map(fn (array $template) => [
+                'dataset' => $template['source_dataset'] ?? 'unknown',
+                'brand' => $template['source_brand'] ?? null,
+                'reference' => $template['source_reference'] ?? null,
+            ])
+            ->unique(fn (array $source) => implode('|', [
+                $source['dataset'],
+                $source['brand'] ?? '',
+                $source['reference'] ?? '',
+            ]))
+            ->values()
+            ->all();
     }
 
     protected function ensurePermissionGraph(): void
@@ -833,11 +791,17 @@ class BeautyDemoPreparationService
         ];
     }
 
-    protected function assertNonProduction(): void
+    protected function assertDemoExecutionAllowed(array $options = []): void
     {
-        if (app()->environment('production')) {
-            throw new RuntimeException('Phase 6 demo preparation is blocked in production.');
+        if (app()->environment('production') && !$this->allowsProductionDemoOperations($options)) {
+            throw new RuntimeException('Phase 6 demo preparation is blocked in production. Set BEAUTY_DEMO_ALLOW_PRODUCTION=true or pass --allow-production to continue.');
         }
+    }
+
+    protected function allowsProductionDemoOperations(array $options = []): bool
+    {
+        return (bool) ($options['allow_production'] ?? false)
+            || (bool) config('services.beauty_demo.allow_production', false);
     }
 
     protected function writeReport(array $report, string $reportPath): void

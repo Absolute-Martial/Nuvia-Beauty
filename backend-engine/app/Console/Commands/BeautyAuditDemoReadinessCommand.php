@@ -9,6 +9,7 @@ class BeautyAuditDemoReadinessCommand extends Command
 {
     protected $signature = 'beauty:audit-demo-readiness
         {--shop-id= : Optional demo shop override}
+        {--allow-production : Explicitly allow the audit while APP_ENV=production}
         {--report-path= : Optional JSON report path}';
 
     protected $description = 'Audit the Phase 6 demo-readiness surface and write a machine-readable report.';
@@ -17,6 +18,7 @@ class BeautyAuditDemoReadinessCommand extends Command
     {
         $summary = $demo->audit([
             'shop_id' => $this->option('shop-id') !== null ? (int) $this->option('shop-id') : null,
+            'allow_production' => (bool) $this->option('allow-production'),
             'report_path' => $this->option('report-path') ?: null,
         ]);
 

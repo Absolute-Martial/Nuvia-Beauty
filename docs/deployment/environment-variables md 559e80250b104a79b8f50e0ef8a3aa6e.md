@@ -39,8 +39,12 @@ This page is the **configuration reference** for the stack. Configuration is sup
 | `AI_PROVIDER` | `perfect_corp` or `demo`. |
 | `PERFECT_CORP_API_KEY` / `PERFECT_CORP_ENDPOINT` | Backend-only; never `NEXT_PUBLIC_*`. |
 | `AI_DEMO_MODE` | `true` forces deterministic demo-mode. |
+| `BEAUTY_DEMO_ALLOW_PRODUCTION` | opt-in override for demo prep/audit on a production-profile demo deploy. |
+| `BEAUTY_DEMO_AUTO_PREPARE` | auto-runs demo prep and audit during `backend-init`. |
 
 When provider keys are unset, the system runs in **demo-mode** automatically.
+
+For a public demo deployment that still uses `APP_ENV=production`, enable both `BEAUTY_DEMO_ALLOW_PRODUCTION=true` and `BEAUTY_DEMO_AUTO_PREPARE=true` so the catalog and consultation demo state are seeded on boot.
 
 # 5. Buckets
 

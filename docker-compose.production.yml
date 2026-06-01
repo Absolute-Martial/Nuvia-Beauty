@@ -44,6 +44,8 @@ x-backend-env: &backend_env
   AISTOR_USE_PATH_STYLE_ENDPOINT: ${AISTOR_USE_PATH_STYLE_ENDPOINT:-true}
   AISTOR_BUCKET_ENDPOINT: ${AISTOR_BUCKET_ENDPOINT:-false}
   AISTOR_ROOT_PREFIX: ${AISTOR_ROOT_PREFIX:-}
+  BEAUTY_DEMO_ALLOW_PRODUCTION: ${BEAUTY_DEMO_ALLOW_PRODUCTION:-false}
+  BEAUTY_DEMO_AUTO_PREPARE: ${BEAUTY_DEMO_AUTO_PREPARE:-false}
 
 x-default-logging: &default_logging
   driver: json-file
@@ -153,7 +155,11 @@ services:
         export AISTOR_ACCESS_KEY_ID="$$(cat /run/secrets/root_user)";
         export AISTOR_SECRET_ACCESS_KEY="$$(cat /run/secrets/root_password)";
         php artisan migrate --force &&
-        php artisan db:seed --class='\Marvel\Database\Seeders\SettingsSeeder' --force
+        php artisan db:seed --class='\Marvel\Database\Seeders\SettingsSeeder' --force &&
+        if [ "$${BEAUTY_DEMO_AUTO_PREPARE:-false}" = "true" ]; then
+          php artisan beauty:prepare-demo --allow-production &&
+          php artisan beauty:audit-demo-readiness --allow-production;
+        fi
     volumes:
       - ${AISTOR_ROOT_USER_FILE:?AISTOR_ROOT_USER_FILE is required}:/run/secrets/root_user:ro
       - ${AISTOR_ROOT_PASSWORD_FILE:?AISTOR_ROOT_PASSWORD_FILE is required}:/run/secrets/root_password:ro

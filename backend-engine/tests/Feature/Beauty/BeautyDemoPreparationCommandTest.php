@@ -14,6 +14,7 @@ use Illuminate\Support\Str;
 use Marvel\Enums\ProductStatus;
 use Marvel\Enums\ProductType;
 use Marvel\Enums\Role as UserRole;
+use RuntimeException;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -142,11 +143,19 @@ class BeautyDemoPreparationCommandTest extends TestCase
                 ->where('status', ProductStatus::PUBLISH)
                 ->count()
         );
+        $this->assertDatabaseHas('products', [
+            'shop_id' => $shop->id,
+            'name' => 'Studio Moisture Cream',
+        ]);
 
         $session = BeautySession::query()->where('public_id', 'demo-seller-consultation')->first();
         $this->assertNotNull($session);
         $this->assertSame((int) $shop->id, (int) $session->shop_id);
         $this->assertSame(BeautySession::STATE_SAVED, $session->session_state);
+
+        $report = json_decode((string) file_get_contents($reportPath), true);
+        $this->assertIsArray($report['catalog_sources'] ?? null);
+        $this->assertNotEmpty($report['catalog_sources'] ?? []);
     }
 
     public function test_demo_audit_command_reports_success_after_preparation(): void
@@ -225,6 +234,38 @@ class BeautyDemoPreparationCommandTest extends TestCase
             '--report-path' => $auditPath,
         ])->assertExitCode(0);
 
+        $this->assertFileExists($auditPath);
+    }
+
+    public function test_demo_preparation_command_is_blocked_in_production_by_default(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Phase 6 demo preparation is blocked in production.');
+
+        $this->artisan('beauty:prepare-demo');
+    }
+
+    public function test_demo_preparation_and_audit_can_run_in_production_when_explicitly_allowed(): void
+    {
+        $this->app->detectEnvironment(fn () => 'production');
+        Config::set('services.beauty_demo.allow_production', true);
+
+        $reportPath = storage_path('app/testing/beauty-demo-production-report.json');
+        $auditPath = storage_path('app/testing/beauty-demo-production-audit-report.json');
+
+        $this->artisan('beauty:prepare-demo', [
+            '--report-path' => $reportPath,
+            '--allow-production' => true,
+        ])->assertExitCode(0);
+
+        $this->artisan('beauty:audit-demo-readiness', [
+            '--report-path' => $auditPath,
+            '--allow-production' => true,
+        ])->assertExitCode(0);
+
+        $this->assertFileExists($reportPath);
         $this->assertFileExists($auditPath);
     }
 }
