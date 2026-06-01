@@ -118,6 +118,37 @@ class BeautyDemoPreparationCommandTest extends TestCase
         $this->assertGreaterThanOrEqual(1, $recommendations->filter(fn ($recommendation) => !empty($recommendation->warnings_json))->count());
     }
 
+    public function test_demo_preparation_command_creates_a_deterministic_demo_catalog_when_database_is_empty(): void
+    {
+        $reportPath = storage_path('app/testing/beauty-demo-empty-db-report.json');
+
+        $this->artisan('beauty:prepare-demo', [
+            '--report-path' => $reportPath,
+        ])->assertExitCode(0);
+
+        $this->assertFileExists($reportPath);
+
+        $shop = DB::table('shops')->where('slug', 'nuvia-demo-beauty')->first();
+        $this->assertNotNull($shop);
+
+        $owner = DB::table('users')->where('email', 'demo-owner@nuvia.local')->first();
+        $this->assertNotNull($owner);
+        $this->assertSame((int) $owner->id, (int) $shop->owner_id);
+
+        $this->assertSame(
+            10,
+            DB::table('products')
+                ->where('shop_id', $shop->id)
+                ->where('status', ProductStatus::PUBLISH)
+                ->count()
+        );
+
+        $session = BeautySession::query()->where('public_id', 'demo-seller-consultation')->first();
+        $this->assertNotNull($session);
+        $this->assertSame((int) $shop->id, (int) $session->shop_id);
+        $this->assertSame(BeautySession::STATE_SAVED, $session->session_state);
+    }
+
     public function test_demo_audit_command_reports_success_after_preparation(): void
     {
         $ownerId = DB::table('users')->insertGetId([

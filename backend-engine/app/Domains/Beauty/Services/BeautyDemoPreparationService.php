@@ -18,8 +18,10 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Marvel\Database\Models\Product;
 use Marvel\Database\Models\Shop;
+use Marvel\Database\Models\Type;
 use Marvel\Database\Models\User;
 use Marvel\Enums\Permission as UserPermission;
+use Marvel\Enums\ProductType;
 use Marvel\Enums\ProductStatus;
 use Marvel\Enums\Role as UserRole;
 use RuntimeException;
@@ -34,6 +36,9 @@ class BeautyDemoPreparationService
     public const DEMO_CUSTOMER_NAME = 'Nuvia Demo Guest';
     public const DEMO_CUSTOMER_EMAIL = 'demo-guest@nuvia.local';
     public const DEMO_CUSTOMER_PHONE = '+1-555-0106';
+    public const DEMO_OWNER_EMAIL = 'demo-owner@nuvia.local';
+    public const DEMO_SHOP_SLUG = 'nuvia-demo-beauty';
+    public const DEMO_TYPE_SLUG = 'beauty-demo';
 
     public function __construct(
         protected BeautySessionService $sessions,
@@ -47,7 +52,7 @@ class BeautyDemoPreparationService
     {
         $this->assertNonProduction();
 
-        $shop = $this->resolveShop($options['shop_id'] ?? null);
+        $shop = $this->resolveShop($options['shop_id'] ?? null, true, true);
         $consultant = $this->resolveConsultant($shop, $options['consultant_user_id'] ?? null);
         $source = isset($options['kaggle_source']) ? trim((string) $options['kaggle_source']) : '';
         $mappingLimit = max(10, (int) ($options['mapping_limit'] ?? 40));
@@ -58,16 +63,7 @@ class BeautyDemoPreparationService
             $importSummary = $this->kaggleImporter->import($source, $mappingLimit, false);
         }
 
-        $products = Product::query()
-            ->where('shop_id', $shop->id)
-            ->where('status', ProductStatus::PUBLISH)
-            ->orderBy('id')
-            ->limit(10)
-            ->get();
-
-        if ($products->count() < 10) {
-            throw new RuntimeException('Phase 6 demo prep requires a shop with at least 10 published products.');
-        }
+        $products = $this->ensurePublishedDemoCatalog($shop);
 
         $mappingSummary = $this->upsertShowcaseMappings($products);
         $this->cleanupPreviousDemoArtifacts($shop->id);
@@ -389,7 +385,7 @@ class BeautyDemoPreparationService
         ];
     }
 
-    protected function resolveShop(?int $shopId, bool $requireMinimumCatalog = true): ?Shop
+    protected function resolveShop(?int $shopId, bool $requireMinimumCatalog = true, bool $seedDemoCatalog = false): ?Shop
     {
         if ($shopId) {
             $shop = Shop::find($shopId);
@@ -397,11 +393,38 @@ class BeautyDemoPreparationService
                 throw new RuntimeException('The requested demo shop could not be found.');
             }
 
+            if ($seedDemoCatalog) {
+                $this->ensurePublishedDemoCatalog($shop);
+            }
+
             if ($requireMinimumCatalog && $this->publishedProductsForShop($shop)->count() < 10) {
                 throw new RuntimeException('The requested demo shop does not have at least 10 published products.');
             }
 
             return $shop;
+        }
+
+        $demoShop = Shop::query()
+            ->where('slug', self::DEMO_SHOP_SLUG)
+            ->first();
+
+        if ($demoShop) {
+            if ($seedDemoCatalog) {
+                $this->ensurePublishedDemoCatalog($demoShop);
+            }
+
+            if ($requireMinimumCatalog && $this->publishedProductsForShop($demoShop)->count() < 10) {
+                throw new RuntimeException('The dedicated Phase 6 demo shop does not have at least 10 published products.');
+            }
+
+            return $demoShop;
+        }
+
+        if ($seedDemoCatalog) {
+            $shop = $this->resolveOrCreateDemoShop();
+            $this->ensurePublishedDemoCatalog($shop);
+
+            return $shop->fresh();
         }
 
         $shop = Shop::query()
@@ -517,6 +540,164 @@ class BeautyDemoPreparationService
         $this->grantStaffAccess($user, $shop);
 
         return $user;
+    }
+
+    protected function resolveOrCreateDemoShop(): Shop
+    {
+        $owner = User::query()->firstOrNew(['email' => self::DEMO_OWNER_EMAIL]);
+        $owner->forceFill([
+            'name' => 'Nuvia Demo Owner',
+            'password' => $owner->password ?: Hash::make(Str::random(32)),
+            'is_active' => true,
+            'email_verified_at' => $owner->email_verified_at ?: now(),
+        ])->save();
+
+        $shop = Shop::query()->firstOrNew(['slug' => self::DEMO_SHOP_SLUG]);
+        $shop->forceFill([
+            'owner_id' => $owner->id,
+            'name' => 'Nuvia Demo Beauty',
+            'slug' => self::DEMO_SHOP_SLUG,
+            'is_active' => true,
+            'settings' => $shop->settings ?: [
+                'contact' => [
+                    'emailAddress' => self::DEMO_CUSTOMER_EMAIL,
+                ],
+            ],
+        ])->save();
+
+        if ((int) $owner->shop_id !== (int) $shop->id) {
+            $owner->forceFill(['shop_id' => $shop->id])->save();
+        }
+
+        return $shop;
+    }
+
+    protected function ensurePublishedDemoCatalog(Shop $shop): Collection
+    {
+        $type = $this->resolveOrCreateDemoType();
+
+        foreach ($this->demoCatalogTemplates() as $index => $template) {
+            $product = Product::withTrashed()
+                ->where('shop_id', $shop->id)
+                ->where('sku', $template['sku'])
+                ->first() ?? new Product();
+
+            $product->forceFill([
+                'name' => $template['name'],
+                'slug' => $template['slug'],
+                'description' => $template['description'],
+                'type_id' => $type->id,
+                'price' => $template['price'],
+                'sale_price' => null,
+                'shop_id' => $shop->id,
+                'sku' => $template['sku'],
+                'quantity' => 25 + $index,
+                'in_stock' => true,
+                'is_taxable' => false,
+                'shipping_class_id' => null,
+                'status' => ProductStatus::PUBLISH,
+                'product_type' => ProductType::SIMPLE,
+                'unit' => 'piece',
+                'height' => null,
+                'width' => null,
+                'length' => null,
+                'image' => null,
+                'gallery' => null,
+                'deleted_at' => null,
+            ])->save();
+        }
+
+        return $this->publishedProductsForShop($shop)->take(10)->values();
+    }
+
+    protected function resolveOrCreateDemoType(): Type
+    {
+        $type = Type::query()->firstOrNew(['slug' => self::DEMO_TYPE_SLUG]);
+        $type->forceFill([
+            'name' => 'Beauty Demo',
+            'slug' => self::DEMO_TYPE_SLUG,
+            'icon' => null,
+            'promotional_sliders' => null,
+            'images' => null,
+        ])->save();
+
+        return $type;
+    }
+
+    protected function demoCatalogTemplates(): array
+    {
+        return [
+            [
+                'name' => 'Radiance Reset Cleanser',
+                'slug' => 'radiance-reset-cleanser',
+                'sku' => 'NUVIA-DEMO-001',
+                'price' => 22,
+                'description' => 'Foaming cleanser positioned for oily skin and post-workday refresh.',
+            ],
+            [
+                'name' => 'Clarity Boost Serum',
+                'slug' => 'clarity-boost-serum',
+                'sku' => 'NUVIA-DEMO-002',
+                'price' => 34,
+                'description' => 'Niacinamide-led serum for uneven-looking tone and texture support.',
+            ],
+            [
+                'name' => 'Hydra Balance Gel Cream',
+                'slug' => 'hydra-balance-gel-cream',
+                'sku' => 'NUVIA-DEMO-003',
+                'price' => 29,
+                'description' => 'Lightweight hydrator for combination routines needing moisture without heaviness.',
+            ],
+            [
+                'name' => 'Glow Guard SPF Moisturizer',
+                'slug' => 'glow-guard-spf-moisturizer',
+                'sku' => 'NUVIA-DEMO-004',
+                'price' => 31,
+                'description' => 'Daily finish product intentionally used for the warning-path recommendation example.',
+            ],
+            [
+                'name' => 'Velvet Repair Night Cream',
+                'slug' => 'velvet-repair-night-cream',
+                'sku' => 'NUVIA-DEMO-005',
+                'price' => 36,
+                'description' => 'Richer overnight cream for dry-skin contrast in the demo catalog.',
+            ],
+            [
+                'name' => 'Texture Tune Essence',
+                'slug' => 'texture-tune-essence',
+                'sku' => 'NUVIA-DEMO-006',
+                'price' => 27,
+                'description' => 'Essence positioned for smoothing and barrier support across mixed routines.',
+            ],
+            [
+                'name' => 'Calm Cloud Mist',
+                'slug' => 'calm-cloud-mist',
+                'sku' => 'NUVIA-DEMO-007',
+                'price' => 19,
+                'description' => 'Sensitive-skin contrast item for redness-aware routines.',
+            ],
+            [
+                'name' => 'Contour Restore Eye Gel',
+                'slug' => 'contour-restore-eye-gel',
+                'sku' => 'NUVIA-DEMO-008',
+                'price' => 26,
+                'description' => 'Targeted gel for firmness and hydration in the contrast set.',
+            ],
+            [
+                'name' => 'Barrier Silk Lotion',
+                'slug' => 'barrier-silk-lotion',
+                'sku' => 'NUVIA-DEMO-009',
+                'price' => 24,
+                'description' => 'Dryness-focused lotion used to round out the lower-score alternatives.',
+            ],
+            [
+                'name' => 'Tone Shift Vitamin Drops',
+                'slug' => 'tone-shift-vitamin-drops',
+                'sku' => 'NUVIA-DEMO-010',
+                'price' => 33,
+                'description' => 'Final demo item for uneven-tone narratives and presentation variety.',
+            ],
+        ];
     }
 
     protected function ensurePermissionGraph(): void
