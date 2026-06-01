@@ -7,6 +7,7 @@ use App\Domains\Beauty\Models\BeautyProductMapping;
 use App\Domains\Beauty\Models\BeautyRecommendation;
 use App\Domains\Beauty\Models\BeautySession;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
@@ -181,6 +182,10 @@ class BeautyDemoPreparationCommandTest extends TestCase
             '--shop-id' => $shopId,
             '--consultant-user-id' => $ownerId,
         ])->assertExitCode(0);
+
+        Config::set('filesystems.storage_contract', 'local');
+        Config::set('filesystems.disks.s3_beauty_inputs.bucket', null);
+        Config::set('filesystems.disks.s3_beauty_results.bucket', null);
 
         $auditPath = storage_path('app/testing/beauty-demo-audit-report.json');
 

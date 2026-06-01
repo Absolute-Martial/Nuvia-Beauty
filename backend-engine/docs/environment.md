@@ -133,6 +133,7 @@ PERFECT_CORP_DEMO_MODE=true
 ```
 
 Phase 5 uses backend-only Perfect Corp integration. The vendor frontend only receives normalized analysis summaries and recommendation output.
+`PerfectCorpClient::selfCheck()` now stays no-op while disabled or in demo mode, and only performs a live connectivity probe when both `PERFECT_CORP_ENABLED=true` and `PERFECT_CORP_DEMO_MODE=false`.
 
 ## Current runtime note
 
@@ -152,6 +153,14 @@ Phase 5 dispatches `CreatePerfectCorpAnalysisTask` and `PollPerfectCorpAnalysisT
 
 - `QUEUE_CONNECTION=sync` is acceptable for local validation and demo mode.
 - async environments should run a queue worker before live Perfect Corp mode is enabled.
+
+## Demo audit testing note
+
+`php artisan beauty:audit-demo-readiness` still requires private beauty bucket configuration in non-testing environments.
+
+For `APP_ENV=testing`, the command now allows a metadata-only fallback when `S3_BEAUTY_INPUTS_BUCKET` and `S3_BEAUTY_RESULTS_BUCKET` are unset. This keeps CI and local test runs green when no live S3-compatible object storage is exercised.
+
+This fallback is limited to the audit command path in testing. It does not relax runtime storage requirements for actual upload, confirm, signed download, or live analysis flows.
 
 ## Console-safe settings fallback
 

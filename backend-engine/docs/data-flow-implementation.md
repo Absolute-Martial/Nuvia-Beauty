@@ -108,6 +108,11 @@ Vendor starts analysis for an attached consultation image
   -> GET /api/v1/beauty/analysis/{taskId}/status returns normalized summary only
 ```
 
+Testing note:
+
+- `beauty:audit-demo-readiness` can validate the Phase 5 consultation and recommendation flow in `APP_ENV=testing` without live private bucket env vars.
+- The testing fallback is audit-only and does not bypass real storage requirements for uploads or signed downloads.
+
 ### Seller consultation recommendation flow
 
 ```text

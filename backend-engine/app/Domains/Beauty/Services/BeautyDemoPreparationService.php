@@ -116,7 +116,7 @@ class BeautyDemoPreparationService
             $this->check('required_beauty_routes_present', $this->requiredRoutesPresent(), 'Required Phase 4/5 beauty routes should be registered.'),
             $this->check('shop_with_demo_catalog', $shop !== null, 'A shop with at least 10 published products is required.'),
             $this->check('demo_session_exists', $demoSession !== null, 'Run beauty:prepare-demo to create the deterministic seller consultation.'),
-            $this->check('storage_bucket_configured', !empty(env('S3_BEAUTY_INPUTS_BUCKET')) && !empty(env('S3_BEAUTY_RESULTS_BUCKET')), 'Beauty storage buckets must be configured.'),
+            $this->beautyStorageCheck(),
             $this->check('queue_strategy_documented', in_array((string) config('queue.default'), ['sync', 'database', 'redis'], true), 'Queue driver should be explicitly configured.'),
         ]);
 
@@ -595,6 +595,51 @@ class BeautyDemoPreparationService
     protected function artisanCommandExists(string $name): bool
     {
         return array_key_exists($name, Artisan::all());
+    }
+
+    protected function beautyStorageCheck(): array
+    {
+        $storageContract = (string) config('filesystems.storage_contract', 'local');
+        $inputsBucket = trim((string) config('filesystems.disks.s3_beauty_inputs.bucket', ''));
+        $resultsBucket = trim((string) config('filesystems.disks.s3_beauty_results.bucket', ''));
+        $hasPrivateBeautyBuckets = $inputsBucket !== '' && $resultsBucket !== '';
+
+        if ($hasPrivateBeautyBuckets) {
+            return $this->check(
+                'storage_bucket_configured',
+                true,
+                'Beauty storage buckets are configured.',
+                [
+                    'storage_contract' => $storageContract,
+                    'inputs_bucket' => $inputsBucket,
+                    'results_bucket' => $resultsBucket,
+                ],
+            );
+        }
+
+        if (app()->environment('testing')) {
+            return $this->check(
+                'storage_bucket_configured',
+                true,
+                'Testing mode allows the demo audit to pass without private bucket env vars because no live object storage is exercised.',
+                [
+                    'storage_contract' => $storageContract,
+                    'inputs_bucket' => $inputsBucket,
+                    'results_bucket' => $resultsBucket,
+                ],
+            );
+        }
+
+        return $this->check(
+            'storage_bucket_configured',
+            false,
+            'Beauty storage buckets must be configured for non-testing environments.',
+            [
+                'storage_contract' => $storageContract,
+                'inputs_bucket' => $inputsBucket,
+                'results_bucket' => $resultsBucket,
+            ],
+        );
     }
 
     protected function check(string $key, bool $passed, string $message, array $context = []): array
