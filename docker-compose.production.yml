@@ -20,6 +20,19 @@ x-backend-env: &backend_env
   FRONTEND_URL: ${FRONTEND_URL:?FRONTEND_URL is required}
   ADMIN_URL: ${ADMIN_URL:?ADMIN_URL is required}
   VENDOR_URL: ${VENDOR_URL:?VENDOR_URL is required}
+  STORAGE_DRIVER: ${STORAGE_DRIVER:-s3_compatible}
+  S3_PROVIDER: ${S3_PROVIDER:-minio_aistor}
+  S3_ENDPOINT: ${S3_ENDPOINT:-http://aistor:9000}
+  S3_REGION: ${S3_REGION:-${AISTOR_REGION:-us-east-1}}
+  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-${AISTOR_ACCESS_KEY_ID:-}}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-${AISTOR_SECRET_ACCESS_KEY:-}}
+  S3_USE_PATH_STYLE_ENDPOINT: ${S3_USE_PATH_STYLE_ENDPOINT:-${AISTOR_USE_PATH_STYLE_ENDPOINT:-true}}
+  S3_PUBLIC_BUCKET: ${S3_PUBLIC_BUCKET:-${AISTOR_BUCKET:-nuvia-public}}
+  S3_BEAUTY_INPUTS_BUCKET: ${S3_BEAUTY_INPUTS_BUCKET:-nuvia-private-beauty-inputs}
+  S3_BEAUTY_RESULTS_BUCKET: ${S3_BEAUTY_RESULTS_BUCKET:-nuvia-private-beauty-results}
+  S3_BEAUTY_CALIBRATION_BUCKET: ${S3_BEAUTY_CALIBRATION_BUCKET:-nuvia-private-calibration}
+  S3_UPLOAD_URL_TTL_MINUTES: ${S3_UPLOAD_URL_TTL_MINUTES:-15}
+  S3_DOWNLOAD_URL_TTL_MINUTES: ${S3_DOWNLOAD_URL_TTL_MINUTES:-60}
   FILESYSTEM_DISK: ${FILESYSTEM_DISK:-s3}
   FILESYSTEM_CLOUD: ${FILESYSTEM_CLOUD:-s3}
   IMPORT_FILESYSTEM_DISK: ${IMPORT_FILESYSTEM_DISK:-s3}
@@ -101,8 +114,11 @@ services:
       - -c
       - >
         until mc alias set local http://aistor:9000 "$$(cat /run/secrets/root_user)" "$$(cat /run/secrets/root_password)"; do sleep 2; done &&
-        mc mb --ignore-existing local/${AISTOR_BUCKET:-nuvia-public} &&
-        mc anonymous set download local/${AISTOR_BUCKET:-nuvia-public}
+        mc mb --ignore-existing local/${S3_PUBLIC_BUCKET:-${AISTOR_BUCKET:-nuvia-public}} &&
+        mc mb --ignore-existing local/${S3_BEAUTY_INPUTS_BUCKET:-nuvia-private-beauty-inputs} &&
+        mc mb --ignore-existing local/${S3_BEAUTY_RESULTS_BUCKET:-nuvia-private-beauty-results} &&
+        mc mb --ignore-existing local/${S3_BEAUTY_CALIBRATION_BUCKET:-nuvia-private-calibration} &&
+        mc anonymous set download local/${S3_PUBLIC_BUCKET:-${AISTOR_BUCKET:-nuvia-public}}
     volumes:
       - ${AISTOR_ROOT_USER_FILE:?AISTOR_ROOT_USER_FILE is required}:/run/secrets/root_user:ro
       - ${AISTOR_ROOT_PASSWORD_FILE:?AISTOR_ROOT_PASSWORD_FILE is required}:/run/secrets/root_password:ro
@@ -132,6 +148,8 @@ services:
         export CACHE_DRIVER=file;
         export SESSION_DRIVER=file;
         export QUEUE_CONNECTION=sync;
+        export S3_ACCESS_KEY_ID="$$(cat /run/secrets/root_user)";
+        export S3_SECRET_ACCESS_KEY="$$(cat /run/secrets/root_password)";
         export AISTOR_ACCESS_KEY_ID="$$(cat /run/secrets/root_user)";
         export AISTOR_SECRET_ACCESS_KEY="$$(cat /run/secrets/root_password)";
         php artisan migrate --force &&
@@ -166,6 +184,8 @@ services:
         export CACHE_DRIVER=file;
         export SESSION_DRIVER=file;
         export QUEUE_CONNECTION=sync;
+        export S3_ACCESS_KEY_ID="$$(cat /run/secrets/root_user)";
+        export S3_SECRET_ACCESS_KEY="$$(cat /run/secrets/root_password)";
         export AISTOR_ACCESS_KEY_ID="$$(cat /run/secrets/root_user)";
         export AISTOR_SECRET_ACCESS_KEY="$$(cat /run/secrets/root_password)";
         php artisan serve --host=0.0.0.0 --port=8000

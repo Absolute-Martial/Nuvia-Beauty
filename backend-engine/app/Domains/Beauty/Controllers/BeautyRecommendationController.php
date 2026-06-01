@@ -146,7 +146,7 @@ class BeautyRecommendationController extends Controller
 
     protected function canViewRecommendation(BeautyRecommendation $recommendation, ?User $user, string $sessionId): bool
     {
-        if ($user && $user->hasPermissionTo(Permission::SUPER_ADMIN)) {
+        if ($user && $user->safeHasPermissionTo(Permission::SUPER_ADMIN)) {
             return true;
         }
 
@@ -179,7 +179,7 @@ class BeautyRecommendationController extends Controller
             ];
         }
 
-        if ($user->hasPermissionTo(Permission::SUPER_ADMIN)) {
+        if ($user->safeHasPermissionTo(Permission::SUPER_ADMIN)) {
             $defaultProfileId = optional($user->profile)->id;
 
             return [

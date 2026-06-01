@@ -65,7 +65,7 @@ class BeautyEventController extends Controller
             ];
         }
 
-        if ($user->hasPermissionTo(\Marvel\Enums\Permission::SUPER_ADMIN)) {
+        if ($user->safeHasPermissionTo(\Marvel\Enums\Permission::SUPER_ADMIN)) {
             return [
                 'customer_id' => $requestedCustomerId ?? (int) $user->id,
                 'profile_id' => $requestedProfileId ?? (optional($user->profile)->id ? (int) optional($user->profile)->id : null),

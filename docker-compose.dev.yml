@@ -1,21 +1,27 @@
 services:
+  db:
+    ports:
+      - "${DB_FORWARD_PORT:-3307}:3306"
+
   aistor:
-    image: quay.io/minio/aistor/minio:latest
-    command: server /mnt/data --console-address ":9001" --license /run/secrets/aistor_license
-    environment:
-      MINIO_ROOT_USER_FILE: /run/secrets/root_user
-      MINIO_ROOT_PASSWORD_FILE: /run/secrets/root_password
+    image: minio/minio:latest
+    entrypoint:
+      - /bin/sh
+      - -c
+      - >
+        export MINIO_ROOT_USER="$$(cat /run/secrets/root_user)" &&
+        export MINIO_ROOT_PASSWORD="$$(cat /run/secrets/root_password)" &&
+        minio server /mnt/data --console-address ":9001"
     ports:
       - "9000:9000"
       - "9001:9001"
     volumes:
-      - ${AISTOR_DEV_DATA_DIR:-./docker/aistor/dev/data}:/mnt/data
+      - ${AISTOR_DEV_DATA_DIR:-./docker/aistor/dev/minio-data}:/mnt/data
       - ${AISTOR_DEV_CERTS_DIR:-./docker/aistor/dev/certs}:/etc/minio/certs
-      - ${AISTOR_DEV_LICENSE_FILE:-./docker/aistor/dev/minio.license}:/run/secrets/aistor_license:ro
       - ${AISTOR_DEV_ROOT_USER_FILE:-./docker/aistor/dev/root_user}:/run/secrets/root_user:ro
       - ${AISTOR_DEV_ROOT_PASSWORD_FILE:-./docker/aistor/dev/root_password}:/run/secrets/root_password:ro
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:9000/minio/health/live || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9000/minio/health/live >/dev/null || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 6
@@ -23,7 +29,7 @@ services:
       - nuvia_beauty_net
 
   aistor-setup:
-    image: quay.io/minio/aistor/mc:latest
+    image: minio/mc:latest
     depends_on:
       aistor:
         condition: service_healthy
@@ -32,8 +38,11 @@ services:
       - -c
       - >
         mc alias set local http://aistor:9000 "$$(cat /run/secrets/root_user)" "$$(cat /run/secrets/root_password)" &&
-        mc mb --ignore-existing local/${AISTOR_BUCKET:-nuvia-public} &&
-        mc anonymous set download local/${AISTOR_BUCKET:-nuvia-public}
+        mc mb --ignore-existing local/${S3_PUBLIC_BUCKET:-${AISTOR_BUCKET:-nuvia-public}} &&
+        mc mb --ignore-existing local/${S3_BEAUTY_INPUTS_BUCKET:-nuvia-private-beauty-inputs} &&
+        mc mb --ignore-existing local/${S3_BEAUTY_RESULTS_BUCKET:-nuvia-private-beauty-results} &&
+        mc mb --ignore-existing local/${S3_BEAUTY_CALIBRATION_BUCKET:-nuvia-private-calibration} &&
+        mc anonymous set download local/${S3_PUBLIC_BUCKET:-${AISTOR_BUCKET:-nuvia-public}}
     volumes:
       - ${AISTOR_DEV_ROOT_USER_FILE:-./docker/aistor/dev/root_user}:/run/secrets/root_user:ro
       - ${AISTOR_DEV_ROOT_PASSWORD_FILE:-./docker/aistor/dev/root_password}:/run/secrets/root_password:ro
@@ -53,6 +62,16 @@ services:
         condition: service_completed_successfully
     environment:
       APP_ENV: local
+      DB_SOCKET: ""
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-s3_compatible}
+      S3_PROVIDER: ${S3_PROVIDER:-minio_aistor}
+      S3_ENDPOINT: http://aistor:9000
+      S3_REGION: ${S3_REGION:-${AISTOR_REGION:-us-east-1}}
+      S3_USE_PATH_STYLE_ENDPOINT: "true"
+      S3_PUBLIC_BUCKET: ${S3_PUBLIC_BUCKET:-${AISTOR_BUCKET:-nuvia-public}}
+      S3_BEAUTY_INPUTS_BUCKET: ${S3_BEAUTY_INPUTS_BUCKET:-nuvia-private-beauty-inputs}
+      S3_BEAUTY_RESULTS_BUCKET: ${S3_BEAUTY_RESULTS_BUCKET:-nuvia-private-beauty-results}
+      S3_BEAUTY_CALIBRATION_BUCKET: ${S3_BEAUTY_CALIBRATION_BUCKET:-nuvia-private-calibration}
       FILESYSTEM_DISK: s3
       FILESYSTEM_CLOUD: s3
       MEDIA_DISK: s3
@@ -67,6 +86,8 @@ services:
       - /bin/sh
       - -c
       - >
+        export S3_ACCESS_KEY_ID="$$(cat /run/secrets/root_user)";
+        export S3_SECRET_ACCESS_KEY="$$(cat /run/secrets/root_password)";
         export AISTOR_ACCESS_KEY_ID="$$(cat /run/secrets/root_user)";
         export AISTOR_SECRET_ACCESS_KEY="$$(cat /run/secrets/root_password)";
         php artisan serve --host 0.0.0.0 --port 8000

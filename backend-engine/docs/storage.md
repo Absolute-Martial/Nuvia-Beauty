@@ -26,7 +26,7 @@ S3_REGION=us-east-1
 S3_ACCESS_KEY_ID=
 S3_SECRET_ACCESS_KEY=
 S3_USE_PATH_STYLE_ENDPOINT=true
-S3_PUBLIC_BUCKET=nuvia-public-assets
+S3_PUBLIC_BUCKET=nuvia-public
 S3_BEAUTY_INPUTS_BUCKET=nuvia-private-beauty-inputs
 S3_BEAUTY_RESULTS_BUCKET=nuvia-private-beauty-results
 S3_BEAUTY_CALIBRATION_BUCKET=nuvia-private-calibration
@@ -177,3 +177,9 @@ Not yet implemented:
 - scheduler wiring for periodic expired-media cleanup
 - audit event table for media access
 - bucket lifecycle policies managed from code
+
+## Local validation note
+
+For local Phase 3 validation, the checked-in dev compose stack uses a MinIO-compatible
+S3 endpoint and a clean dev data path. This avoids reusing incompatible persisted AIStor
+state while keeping the backend contract S3-compatible.

@@ -31,7 +31,7 @@ class MediaAssetPolicy
 
     protected function ownsAsset(User $user, MediaAsset $mediaAsset): bool
     {
-        if ($user->hasPermissionTo(Permission::SUPER_ADMIN)) {
+        if ($user->safeHasPermissionTo(Permission::SUPER_ADMIN)) {
             return true;
         }
 
@@ -51,10 +51,10 @@ class MediaAssetPolicy
             return false;
         }
 
-        if ($user->hasPermissionTo(Permission::STORE_OWNER) && (int) $shop->owner_id === (int) $user->id) {
+        if ($user->safeHasPermissionTo(Permission::STORE_OWNER) && (int) $shop->owner_id === (int) $user->id) {
             return true;
         }
 
-        return $user->hasPermissionTo(Permission::STAFF) && $shop->staffs->contains('id', $user->id);
+        return $user->safeHasPermissionTo(Permission::STAFF) && $shop->staffs->contains('id', $user->id);
     }
 }

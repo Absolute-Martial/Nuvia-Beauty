@@ -133,11 +133,11 @@ class MediaAssetService
         $profileId = isset($payload['profile_id']) ? (int) $payload['profile_id'] : null;
         $shopId = isset($payload['shop_id']) ? (int) $payload['shop_id'] : null;
 
-        if ($ownerType === 'user' && $ownerId !== (int) $actor->id && !$actor->hasPermissionTo(Permission::SUPER_ADMIN)) {
+        if ($ownerType === 'user' && $ownerId !== (int) $actor->id && !$actor->safeHasPermissionTo(Permission::SUPER_ADMIN)) {
             throw new AccessDeniedHttpException('You can only create uploads for your own user record.');
         }
 
-        if ($ownerType === 'profile' && $profileId !== (int) optional($actor->profile)->id && !$actor->hasPermissionTo(Permission::SUPER_ADMIN)) {
+        if ($ownerType === 'profile' && $profileId !== (int) optional($actor->profile)->id && !$actor->safeHasPermissionTo(Permission::SUPER_ADMIN)) {
             throw new AccessDeniedHttpException('You can only create uploads for your own profile.');
         }
 
@@ -198,7 +198,7 @@ class MediaAssetService
 
     protected function canManageShop(User $actor, int $shopId): bool
     {
-        if ($actor->hasPermissionTo(Permission::SUPER_ADMIN)) {
+        if ($actor->safeHasPermissionTo(Permission::SUPER_ADMIN)) {
             return true;
         }
 
@@ -208,10 +208,10 @@ class MediaAssetService
             return false;
         }
 
-        if ($actor->hasPermissionTo(Permission::STORE_OWNER) && (int) $shop->owner_id === (int) $actor->id) {
+        if ($actor->safeHasPermissionTo(Permission::STORE_OWNER) && (int) $shop->owner_id === (int) $actor->id) {
             return true;
         }
 
-        return $actor->hasPermissionTo(Permission::STAFF) && $shop->staffs->contains('id', $actor->id);
+        return $actor->safeHasPermissionTo(Permission::STAFF) && $shop->staffs->contains('id', $actor->id);
     }
 }

@@ -8,12 +8,12 @@
 | `APP_DEBUG` | Debug mode | No | Yes | `true` locally |
 | `APP_URL` | Backend URL | Yes | Yes | `http://localhost:8000` |
 | `DB_CONNECTION` | Database driver | No | Yes | `mysql` |
-| `DB_HOST` | Database host | No | Yes | `127.0.0.1` |
+| `DB_HOST` | Database host | No | Yes | `127.0.0.1` locally or `db` in containers |
 | `DB_PORT` | Database port | No | Yes | `3306` |
 | `DB_DATABASE` | Database name | No | Yes | `nuvia_beauty` |
 | `DB_USERNAME` | Database user | No | Yes | `nuvia_beauty` |
 | `DB_PASSWORD` | Database password | No | Yes | empty local only |
-| `DB_SOCKET` | Optional MySQL socket | No | No | `/run/mysqld/mysqld.sock` |
+| `DB_SOCKET` | Optional MySQL socket | No | No | empty for TCP or `/run/mysqld/mysqld.sock` only when intentionally using a local Unix socket |
 | `CACHE_DRIVER` | Cache backend | No | Yes | `file` local, `redis` production |
 | `QUEUE_CONNECTION` | Queue backend | No | Yes | `sync` local, `redis` production |
 | `SESSION_DRIVER` | Session backend | No | Yes | `file` local |
@@ -46,6 +46,7 @@
 
 ## Rules
 
+- In Docker or Compose runtimes, prefer `DB_HOST=db` and leave `DB_SOCKET` blank so Laravel uses TCP instead of a Unix socket.
 - Do not commit real API keys, passwords, tokens, MinIO secrets, Cloudflare
   tokens, Flagsmith server keys, or YouCam keys.
 - Frontend apps receive only URLs and browser-safe public values.

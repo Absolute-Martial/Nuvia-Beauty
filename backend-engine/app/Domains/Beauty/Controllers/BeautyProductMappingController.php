@@ -165,7 +165,7 @@ class BeautyProductMappingController extends Controller
 
     protected function authorizeProduct(User $actor, Product $product): void
     {
-        if ($actor->hasPermissionTo(Permission::SUPER_ADMIN)) {
+        if ($actor->safeHasPermissionTo(Permission::SUPER_ADMIN)) {
             return;
         }
 
@@ -175,11 +175,11 @@ class BeautyProductMappingController extends Controller
             throw new AccessDeniedHttpException('Mapped product shop could not be resolved.');
         }
 
-        if ($actor->hasPermissionTo(Permission::STORE_OWNER) && (int) $shop->owner_id === (int) $actor->id) {
+        if ($actor->safeHasPermissionTo(Permission::STORE_OWNER) && (int) $shop->owner_id === (int) $actor->id) {
             return;
         }
 
-        if ($actor->hasPermissionTo(Permission::STAFF) && $shop->staffs->contains('id', $actor->id)) {
+        if ($actor->safeHasPermissionTo(Permission::STAFF) && $shop->staffs->contains('id', $actor->id)) {
             return;
         }
 

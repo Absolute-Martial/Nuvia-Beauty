@@ -15,6 +15,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Marvel\Enums\OrderStatus;
 use Marvel\Enums\PaymentStatus;
+use Spatie\Permission\Exceptions\PermissionDoesNotExist;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -219,5 +220,14 @@ class User extends Authenticatable implements MustVerifyEmail
         $this->setRelation('last_order', $data);
 
         return $this;
+    }
+
+    public function safeHasPermissionTo(string $permission): bool
+    {
+        try {
+            return $this->hasPermissionTo($permission);
+        } catch (PermissionDoesNotExist) {
+            return false;
+        }
     }
 }

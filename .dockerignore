@@ -31,3 +31,6 @@ sw.js
 **/public/sw.js
 backend-engine/public/sql
 backend-engine/vendor
+docker/aistor/dev/data
+docker/aistor/dev/minio-data
+docker/aistor/dev/certs

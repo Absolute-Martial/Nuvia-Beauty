@@ -1,12 +1,9 @@
 # Nuvia Beauty
 
-Nuvia Beauty is a multivendor AI beauty commerce platform built for the DevNetwork [AI + ML] Hackathon 2026.
-It keeps the marketplace structure of the original commerce base while focusing the experience on beauty,
-personalization, and photo-based try-on workflows.
-
-Project page:
-
-- https://devnetwork-ai-ml-hack-2026.devpost.com/
+Nuvia Beauty is a multivendor AI beauty commerce platform focused on seller-assisted consultations,
+private-media analysis, explainable recommendations, and continuity across beauty shopping journeys.
+It keeps the marketplace structure of the original commerce base while specializing the experience
+for beauty intelligence workflows across the backend, storefront, admin panel, and vendor portal.
 
 ## What It Does
 
@@ -16,9 +13,10 @@ Project page:
 - Saves customer-facing shopping context so future purchases can be more personalized
 - Keeps the admin, vendor, storefront, and backend surfaces separate
 
-## Submission Snapshot
+## Current Status
 
-This repository is the working hackathon submission. It is in a tested, public-phase ready state for demo and review.
+This repository is the active product codebase. The current architecture, roadmap, and validation
+criteria live under `docs/`, and those documents are the source of truth over any legacy or archival material.
 
 ## Stack
 
@@ -99,7 +97,6 @@ The backend uses AIStor-compatible S3 storage settings, and the frontend apps on
 - [Admin panel docs](./admin-panel/docs/README.md)
 - [Vendor portal docs](./vendor-portal/docs/README.md)
 - [Storefront docs](./storefront/docs/README.md)
-- [Submission notes](./SUBMISSION.md)
 
 ## CI and Release
 
@@ -107,8 +104,8 @@ The backend uses AIStor-compatible S3 storage settings, and the frontend apps on
 - Docker images are published separately to GHCR
 - Wiki publishing is driven from the docs folders in this repo
 
-## Hackathon Notes
+## Product Notes
 
-- The public-facing demo should focus on the multivendor shopping flow
-- Try-on, personalization, and vendor-preserving product discovery are the key user-facing behaviors
-- Keep the README aligned with the actual repo structure and deployed surfaces
+- The backend remains the only trusted tier for provider calls, storage access, and recommendation logic
+- Frontend apps stay thin clients over REST APIs
+- Keep this README aligned with the active docs tree and the actual deployed surfaces

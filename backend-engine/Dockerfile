@@ -7,6 +7,7 @@ RUN apk add --no-cache \
     curl \
     git \
     icu-dev \
+    sqlite-dev \
     libpng-dev \
     libzip-dev \
     libxml2-dev \
@@ -15,7 +16,7 @@ RUN apk add --no-cache \
     libjpeg-turbo-dev \
     $PHPIZE_DEPS \
   && docker-php-ext-configure gd --with-freetype --with-jpeg \
-  && docker-php-ext-install bcmath exif gd intl mbstring pdo_mysql zip xml
+  && docker-php-ext-install bcmath exif gd intl mbstring pdo_mysql pdo_sqlite zip xml
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
