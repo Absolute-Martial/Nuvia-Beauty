@@ -102,6 +102,9 @@ jobs:
           fi
 
           git -C .wiki-repo commit -m "Sync documentation from ${GITHUB_SHA}"
-          git -C .wiki-repo push origin HEAD
+          if ! git -C .wiki-repo push origin HEAD; then
+            echo "::warning::Wiki docs were assembled, but push was denied. Check WIKI_SYNC_SECRET permissions for ${wiki_url}."
+            exit 0
+          fi
         env:
           WIKI_SYNC_SECRET: ${{ secrets.WIKI_SYNC_SECRET }}
