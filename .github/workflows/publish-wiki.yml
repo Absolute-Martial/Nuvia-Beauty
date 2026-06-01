@@ -38,17 +38,46 @@ jobs:
       - name: Build wiki source tree
         shell: bash
         run: |
+          shopt -s nullglob
+
           rm -rf .wiki-src
-          mkdir -p .wiki-src/backend-engine .wiki-src/admin-panel .wiki-src/vendor-portal .wiki-src/storefront
+          mkdir -p .wiki-src/docs .wiki-src/backend-engine .wiki-src/admin-panel .wiki-src/vendor-portal .wiki-src/storefront
 
-          cp docs/Home.md .wiki-src/Home.md
-          cp docs/_Sidebar.md .wiki-src/_Sidebar.md
-          cp docs/*.md .wiki-src/
+          cp -a docs/. .wiki-src/docs/
+          rm -rf .wiki-src/docs/.obsidian
 
-          cp backend-engine/docs/*.md .wiki-src/backend-engine/
-          cp admin-panel/docs/*.md .wiki-src/admin-panel/
-          cp vendor-portal/docs/*.md .wiki-src/vendor-portal/
-          cp storefront/docs/*.md .wiki-src/storefront/
+          for doc in backend-engine/docs/*.md; do
+            cp "${doc}" .wiki-src/backend-engine/
+          done
+          for doc in admin-panel/docs/*.md; do
+            cp "${doc}" .wiki-src/admin-panel/
+          done
+          for doc in vendor-portal/docs/*.md; do
+            cp "${doc}" .wiki-src/vendor-portal/
+          done
+          for doc in storefront/docs/*.md; do
+            cp "${doc}" .wiki-src/storefront/
+          done
+
+          docs_index="$(find docs -maxdepth 1 -type f -iname 'index*.md' | sort | head -n 1)"
+          docs_readme="$(find docs -maxdepth 1 -type f -iname 'readme*.md' | sort | head -n 1)"
+          if [ -n "${docs_index}" ]; then
+            cp "${docs_index}" .wiki-src/Home.md
+          elif [ -n "${docs_readme}" ]; then
+            cp "${docs_readme}" .wiki-src/Home.md
+          else
+            printf '# Nuvia Beauty Documentation\n' > .wiki-src/Home.md
+          fi
+
+          {
+            printf '# Nuvia Beauty Documentation\n'
+            printf '\n'
+            printf '%s\n' '- [Docs](docs/)'
+            printf '%s\n' '- [Backend Engine Docs](backend-engine/)'
+            printf '%s\n' '- [Admin Panel Docs](admin-panel/)'
+            printf '%s\n' '- [Vendor Portal Docs](vendor-portal/)'
+            printf '%s\n' '- [Storefront Docs](storefront/)'
+          } > .wiki-src/_Sidebar.md
 
       - name: Sync assembled docs to wiki
         shell: bash

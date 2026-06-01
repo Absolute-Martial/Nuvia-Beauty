@@ -8,6 +8,7 @@ build/
 coverage/
 **/tsconfig.tsbuildinfo
 **/.phpunit.result.cache
+.wiki-src/
 
 # Environment files
 .env
