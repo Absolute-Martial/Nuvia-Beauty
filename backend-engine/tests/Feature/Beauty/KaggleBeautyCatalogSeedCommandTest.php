@@ -5,6 +5,7 @@ namespace Tests\Feature\Beauty;
 use App\Domains\Beauty\Models\BeautyProductMapping;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Marvel\Enums\ProductStatus;
@@ -15,6 +16,13 @@ use Tests\TestCase;
 class KaggleBeautyCatalogSeedCommandTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        File::ensureDirectoryExists(storage_path('app/testing'));
+    }
 
     public function test_kaggle_seed_command_maps_existing_products_from_csv(): void
     {

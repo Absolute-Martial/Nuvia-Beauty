@@ -8,6 +8,7 @@ use App\Domains\Beauty\Models\BeautyRecommendation;
 use App\Domains\Beauty\Models\BeautySession;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Marvel\Enums\ProductStatus;
 use Marvel\Enums\ProductType;
@@ -19,6 +20,13 @@ use Tests\TestCase;
 class BeautyDemoPreparationCommandTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        File::ensureDirectoryExists(storage_path('app/testing'));
+    }
 
     public function test_demo_preparation_command_builds_repeatable_demo_records(): void
     {

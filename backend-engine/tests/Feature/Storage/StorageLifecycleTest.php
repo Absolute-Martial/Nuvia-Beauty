@@ -20,6 +20,14 @@ class StorageLifecycleTest extends TestCase
         parent::setUp();
 
         Config::set('queue.default', 'sync');
+
+        if (
+            blank(config('filesystems.disks.s3_beauty_inputs.key')) ||
+            blank(config('filesystems.disks.s3_beauty_inputs.secret')) ||
+            blank(config('filesystems.disks.s3_beauty_inputs.endpoint'))
+        ) {
+            $this->markTestSkipped('S3 lifecycle tests require configured S3 test credentials and endpoint.');
+        }
     }
 
     public function test_private_media_lifecycle_works_end_to_end(): void

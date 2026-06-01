@@ -59,15 +59,7 @@ jobs:
             cp "${doc}" .wiki-src/storefront/
           done
 
-          docs_index="$(find docs -maxdepth 1 -type f -iname 'index*.md' | sort | head -n 1)"
-          docs_readme="$(find docs -maxdepth 1 -type f -iname 'readme*.md' | sort | head -n 1)"
-          if [ -n "${docs_index}" ]; then
-            cp "${docs_index}" .wiki-src/Home.md
-          elif [ -n "${docs_readme}" ]; then
-            cp "${docs_readme}" .wiki-src/Home.md
-          else
-            printf '# Nuvia Beauty Documentation\n' > .wiki-src/Home.md
-          fi
+          printf '# Nuvia Beauty Documentation\n\nSee the `docs/` section for the canonical documentation tree.\n' > .wiki-src/Home.md
 
           {
             printf '# Nuvia Beauty Documentation\n'
