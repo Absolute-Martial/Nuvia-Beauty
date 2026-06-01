@@ -137,6 +137,7 @@ class PerfectCorpAnalysisFlowTest extends TestCase
         $statusResponse->assertJsonPath('data.task.id', $taskId);
         $statusResponse->assertJsonPath('data.task.status', 'completed');
         $statusResponse->assertJsonPath('data.analysis_result.summary.demo_mode', true);
+        $statusResponse->assertJsonPath('data.session.media_asset.visibility', 'private');
         $statusResponse->assertJsonMissingPath('data.analysis_result.raw_payload');
         $statusResponse->assertJsonMissingPath('data.task.response_payload');
 

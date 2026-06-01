@@ -48,7 +48,9 @@ deployment/
 **/deployment/
 scripts/*
 **/scripts/
+!scripts/
 !scripts/phase6-demo-readiness.sh
+!scripts/phase6-deployment-smoke.sh
 .agents/
 **/.agents/
 .codex/

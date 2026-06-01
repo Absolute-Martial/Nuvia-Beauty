@@ -22,5 +22,10 @@ Commands and results:
 Go/no-go:
 
 - Basic staging entrypoints respond.
-- Full staging go is not recorded yet because the deployed catalog is empty and the end-to-end storefront recommendation flow was not proven against deployed data.
-- Re-run after committing, pushing, deploying the current branch, and seeding staging catalog/demo data.
+- Full staging go is not recorded yet because the deployed catalog was empty and the end-to-end storefront recommendation flow was not proven against deployed data.
+- The current branch now includes production-safe demo seeding and a deploy smoke script.
+- Re-run after redeploying the current branch with:
+  - `BEAUTY_DEMO_ALLOW_PRODUCTION=true`
+  - `BEAUTY_DEMO_AUTO_PREPARE=true`
+  - deterministic `BEAUTY_DEMO_OWNER_PASSWORD` and `BEAUTY_DEMO_ADMIN_PASSWORD`
+- Then run `bash scripts/phase6-deployment-smoke.sh` and archive the resulting JSON report.

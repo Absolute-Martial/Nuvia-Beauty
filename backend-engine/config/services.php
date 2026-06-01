@@ -44,6 +44,10 @@ return [
     'beauty_demo' => [
         'allow_production' => env('BEAUTY_DEMO_ALLOW_PRODUCTION', false),
         'auto_prepare' => env('BEAUTY_DEMO_AUTO_PREPARE', false),
+        'owner_password' => env('BEAUTY_DEMO_OWNER_PASSWORD'),
+        'staff_password' => env('BEAUTY_DEMO_STAFF_PASSWORD'),
+        'admin_email' => env('BEAUTY_DEMO_ADMIN_EMAIL', 'demo-admin@nuvia.local'),
+        'admin_password' => env('BEAUTY_DEMO_ADMIN_PASSWORD'),
     ],
 
 ];

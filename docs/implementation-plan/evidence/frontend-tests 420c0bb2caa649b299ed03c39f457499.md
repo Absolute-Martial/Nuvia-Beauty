@@ -34,3 +34,14 @@ Observed warnings:
 
 - Yarn selected `/tmp/.yarn-cache-1000` because the default user cache path was not writable in this environment.
 - No build-blocking frontend errors were reported in this pass.
+
+## 2026-06-02 — Phase 6 vendor build verification
+
+Commands and results:
+
+- `yarn build:vendor-portal`: passed after the consultation session response type was extended with `media_asset.visibility` for deployment smoke verification.
+
+Observed warnings:
+
+- The existing `react-i18next` static-generation warnings were still emitted.
+- No new build-blocking errors were introduced by the Phase 6 deployment smoke support changes.

@@ -126,6 +126,10 @@ Do not place backend secrets in frontend `NEXT_PUBLIC_*` variables.
 | `PERFECT_CORP_MAX_ATTEMPTS` | maximum live poll attempts | no |
 | `BEAUTY_DEMO_ALLOW_PRODUCTION` | explicit override for demo prep/audit in `APP_ENV=production` | no |
 | `BEAUTY_DEMO_AUTO_PREPARE` | auto-run Phase 6 demo prep during `backend-init` | no |
+| `BEAUTY_DEMO_OWNER_PASSWORD` | deterministic store-owner login for demo environments | yes |
+| `BEAUTY_DEMO_STAFF_PASSWORD` | deterministic vendor/staff login for demo environments | yes |
+| `BEAUTY_DEMO_ADMIN_EMAIL` | demo admin email used for protected admin rehearsal | no |
+| `BEAUTY_DEMO_ADMIN_PASSWORD` | deterministic admin login for demo environments | yes |
 
 Safe Phase 5 default:
 
@@ -152,6 +156,17 @@ BEAUTY_DEMO_AUTO_PREPARE=false
 ```
 
 Use both only for a dedicated demo/staging deployment where you intentionally want the Phase 6 catalog and saved consultation to be bootstrapped on deploy.
+
+If you want to verify the deployed vendor/admin flows end to end, also set deterministic demo credentials:
+
+```text
+BEAUTY_DEMO_OWNER_PASSWORD=<known-demo-password>
+BEAUTY_DEMO_STAFF_PASSWORD=<known-demo-password>
+BEAUTY_DEMO_ADMIN_EMAIL=demo-admin@nuvia.local
+BEAUTY_DEMO_ADMIN_PASSWORD=<known-demo-password>
+```
+
+`beauty:prepare-demo` will then keep those accounts loginable across repeated demo refreshes.
 
 ## Current runtime note
 

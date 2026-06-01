@@ -28,12 +28,14 @@ Owner: Susank Shakya
 - [ ] Confirm vendor consultation analysis completes through demo mode in the demo environment
 - [ ] Confirm admin beauty mapping overview and recompute controls are reachable in the demo environment
 - [ ] Confirm no private media becomes publicly reachable during the rehearsal
+- [ ] Run `bash scripts/phase6-deployment-smoke.sh` with the deployed URLs and demo credentials
 - [ ] Record the final evidence index for the rehearsal run
 - [ ] Rehearse rollback using `docs/deployment/rollback.md`
 
 ## Evidence map
 
 - Demo script: `docs/product/demo-scenarios.md`
+- Deployment smoke script: `scripts/phase6-deployment-smoke.sh`
 - Evidence index: `docs/implementation-plan/evidence/phase-6-demo-readiness.md`
 - Rollback: `docs/deployment/rollback.md`
 - Latest generated reports:

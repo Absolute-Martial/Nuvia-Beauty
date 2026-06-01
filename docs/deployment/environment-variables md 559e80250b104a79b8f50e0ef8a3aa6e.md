@@ -41,10 +41,14 @@ This page is the **configuration reference** for the stack. Configuration is sup
 | `AI_DEMO_MODE` | `true` forces deterministic demo-mode. |
 | `BEAUTY_DEMO_ALLOW_PRODUCTION` | opt-in override for demo prep/audit on a production-profile demo deploy. |
 | `BEAUTY_DEMO_AUTO_PREPARE` | auto-runs demo prep and audit during `backend-init`. |
+| `BEAUTY_DEMO_OWNER_PASSWORD` / `BEAUTY_DEMO_STAFF_PASSWORD` | stable demo vendor credentials for user-testing rehearsal. |
+| `BEAUTY_DEMO_ADMIN_EMAIL` / `BEAUTY_DEMO_ADMIN_PASSWORD` | stable demo admin credentials for mapping-overview rehearsal. |
 
 When provider keys are unset, the system runs in **demo-mode** automatically.
 
 For a public demo deployment that still uses `APP_ENV=production`, enable both `BEAUTY_DEMO_ALLOW_PRODUCTION=true` and `BEAUTY_DEMO_AUTO_PREPARE=true` so the catalog and consultation demo state are seeded on boot.
+
+Use deterministic demo credentials only in a controlled demo/staging environment. They should not be reused for a real production tenant.
 
 # 5. Buckets
 

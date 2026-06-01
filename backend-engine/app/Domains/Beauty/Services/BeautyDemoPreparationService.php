@@ -37,6 +37,7 @@ class BeautyDemoPreparationService
     public const DEMO_CUSTOMER_EMAIL = 'demo-guest@nuvia.local';
     public const DEMO_CUSTOMER_PHONE = '+1-555-0106';
     public const DEMO_OWNER_EMAIL = 'demo-owner@nuvia.local';
+    public const DEMO_ADMIN_EMAIL = 'demo-admin@nuvia.local';
     public const DEMO_SHOP_SLUG = 'nuvia-demo-beauty';
     public const DEMO_TYPE_SLUG = 'beauty-demo';
 
@@ -54,6 +55,8 @@ class BeautyDemoPreparationService
 
         $shop = $this->resolveShop($options['shop_id'] ?? null, true, true);
         $consultant = $this->resolveConsultant($shop, $options['consultant_user_id'] ?? null);
+        $demoStaff = $this->ensureDemoStaffAccount($shop);
+        $demoAdmin = $this->resolveOrCreateDemoAdmin();
         $source = isset($options['kaggle_source']) ? trim((string) $options['kaggle_source']) : '';
         $mappingLimit = max(10, (int) ($options['mapping_limit'] ?? 40));
         $reportPath = (string) ($options['report_path'] ?? storage_path('app/beauty/demo-preparation-report.json'));
@@ -84,6 +87,20 @@ class BeautyDemoPreparationService
             ],
             'demo_mode' => (bool) config('services.perfect_corp.demo_mode', true),
             'catalog_sources' => $this->catalogSources(),
+            'demo_accounts' => array_values(array_filter([
+                [
+                    'role' => 'store_owner',
+                    'email' => $consultant->email,
+                ],
+                [
+                    'role' => 'staff',
+                    'email' => $demoStaff?->email,
+                ],
+                [
+                    'role' => 'super_admin',
+                    'email' => $demoAdmin?->email,
+                ],
+            ], fn (array $account) => !empty($account['email']))),
             'kaggle_import' => $importSummary,
             'mapping_summary' => $mappingSummary,
             'session_summary' => $sessionSummary,
@@ -536,27 +553,44 @@ class BeautyDemoPreparationService
 
     protected function createDemoStaff(Shop $shop): User
     {
+        $configuredPassword = $this->configuredDemoPassword('staff_password');
         $user = User::firstOrCreate(
             ['email' => 'demo-seller@nuvia.local'],
             [
                 'name' => 'Nuvia Demo Seller',
-                'password' => Hash::make(Str::random(32)),
+                'password' => Hash::make($configuredPassword ?: Str::random(32)),
                 'shop_id' => $shop->id,
                 'email_verified_at' => now(),
             ],
         );
+
+        if ($configuredPassword !== null) {
+            $user->forceFill(['password' => Hash::make($configuredPassword)])->save();
+        }
 
         $this->grantStaffAccess($user, $shop);
 
         return $user;
     }
 
+    protected function ensureDemoStaffAccount(Shop $shop): ?User
+    {
+        if ($this->configuredDemoPassword('staff_password') === null) {
+            return null;
+        }
+
+        return $this->createDemoStaff($shop);
+    }
+
     protected function resolveOrCreateDemoShop(): Shop
     {
+        $configuredPassword = $this->configuredDemoPassword('owner_password');
         $owner = User::query()->firstOrNew(['email' => self::DEMO_OWNER_EMAIL]);
         $owner->forceFill([
             'name' => 'Nuvia Demo Owner',
-            'password' => $owner->password ?: Hash::make(Str::random(32)),
+            'password' => $configuredPassword
+                ? Hash::make($configuredPassword)
+                : ($owner->password ?: Hash::make(Str::random(32))),
             'is_active' => true,
             'email_verified_at' => $owner->email_verified_at ?: now(),
         ])->save();
@@ -579,6 +613,32 @@ class BeautyDemoPreparationService
         }
 
         return $shop;
+    }
+
+    protected function resolveOrCreateDemoAdmin(): ?User
+    {
+        $password = $this->configuredDemoPassword('admin_password');
+
+        if ($password === null) {
+            return null;
+        }
+
+        $email = trim((string) config('services.beauty_demo.admin_email', self::DEMO_ADMIN_EMAIL));
+        if ($email === '') {
+            $email = self::DEMO_ADMIN_EMAIL;
+        }
+
+        $user = User::query()->firstOrNew(['email' => $email]);
+        $user->forceFill([
+            'name' => 'Nuvia Demo Admin',
+            'password' => Hash::make($password),
+            'is_active' => true,
+            'email_verified_at' => $user->email_verified_at ?: now(),
+        ])->save();
+
+        $this->grantSuperAdminAccess($user);
+
+        return $user;
     }
 
     protected function ensurePublishedDemoCatalog(Shop $shop): Collection
@@ -802,6 +862,13 @@ class BeautyDemoPreparationService
     {
         return (bool) ($options['allow_production'] ?? false)
             || (bool) config('services.beauty_demo.allow_production', false);
+    }
+
+    protected function configuredDemoPassword(string $key): ?string
+    {
+        $value = trim((string) config("services.beauty_demo.{$key}", ''));
+
+        return $value !== '' ? $value : null;
     }
 
     protected function writeReport(array $report, string $reportPath): void

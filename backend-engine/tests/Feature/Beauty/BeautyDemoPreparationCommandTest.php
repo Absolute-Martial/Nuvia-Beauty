@@ -10,10 +10,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Marvel\Enums\ProductStatus;
 use Marvel\Enums\ProductType;
 use Marvel\Enums\Role as UserRole;
+use Marvel\Enums\Permission as PermissionEnum;
 use RuntimeException;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -267,5 +269,29 @@ class BeautyDemoPreparationCommandTest extends TestCase
 
         $this->assertFileExists($reportPath);
         $this->assertFileExists($auditPath);
+    }
+
+    public function test_demo_preparation_uses_configured_demo_credentials_and_bootstraps_demo_admin(): void
+    {
+        Config::set('services.beauty_demo.owner_password', 'DemoOwnerPass123!');
+        Config::set('services.beauty_demo.staff_password', 'DemoStaffPass123!');
+        Config::set('services.beauty_demo.admin_email', 'demo-admin@example.test');
+        Config::set('services.beauty_demo.admin_password', 'DemoAdminPass123!');
+
+        $this->artisan('beauty:prepare-demo')->assertExitCode(0);
+
+        $owner = DB::table('users')->where('email', 'demo-owner@nuvia.local')->first();
+        $staff = DB::table('users')->where('email', 'demo-seller@nuvia.local')->first();
+        $admin = DB::table('users')->where('email', 'demo-admin@example.test')->first();
+
+        $this->assertNotNull($owner);
+        $this->assertNotNull($staff);
+        $this->assertNotNull($admin);
+        $this->assertTrue(Hash::check('DemoOwnerPass123!', (string) $owner->password));
+        $this->assertTrue(Hash::check('DemoStaffPass123!', (string) $staff->password));
+        $this->assertTrue(Hash::check('DemoAdminPass123!', (string) $admin->password));
+
+        $adminModel = \Marvel\Database\Models\User::query()->findOrFail($admin->id);
+        $this->assertTrue($adminModel->safeHasPermissionTo(PermissionEnum::SUPER_ADMIN));
     }
 }

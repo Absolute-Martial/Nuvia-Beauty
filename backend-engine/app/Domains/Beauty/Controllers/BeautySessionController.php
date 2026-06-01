@@ -228,6 +228,7 @@ class BeautySessionController extends Controller
                 'disk_name' => $session->primaryMediaAsset->disk_name,
                 'bucket' => $session->primaryMediaAsset->bucket,
                 'object_key' => $session->primaryMediaAsset->object_key,
+                'visibility' => $session->primaryMediaAsset->visibility,
                 'status' => $session->primaryMediaAsset->status,
                 'content_type' => $session->primaryMediaAsset->content_type,
             ] : null,

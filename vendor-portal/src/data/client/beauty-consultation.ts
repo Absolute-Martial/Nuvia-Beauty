@@ -51,6 +51,7 @@ export interface BeautyConsultationSession {
     disk_name: string;
     bucket: string;
     object_key: string;
+    visibility: string;
     status: string;
     content_type: string;
   } | null;
