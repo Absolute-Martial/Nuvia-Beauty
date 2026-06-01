@@ -46,9 +46,8 @@ Zyro_Beauty_Intelligence_Proposal_Final_Patched.docx
 # Project automation and editor directories
 deployment/
 **/deployment/
-scripts/
+scripts/*
 **/scripts/
-!scripts/
 !scripts/phase6-demo-readiness.sh
 .agents/
 **/.agents/
