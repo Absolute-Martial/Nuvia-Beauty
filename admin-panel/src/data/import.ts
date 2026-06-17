@@ -18,8 +18,13 @@ export const useImportAttributesMutation = () => {
       return importClient.importCsv(API_ENDPOINTS.IMPORT_ATTRIBUTES, input);
     },
     {
-      onSuccess: () => {
+      onSuccess: (data: any, variables: Input) => {
         toast.success(t('common:attribute-imported-successfully'));
+        if (typeof window !== 'undefined' && (window as any).pendo) {
+          (window as any).pendo.track('attributes_imported', {
+            shop_id: variables?.shop_id || '',
+          });
+        }
       },
       onError: (error: any) => {
         toast.error(t(`common:${error?.response?.data.message}`));
@@ -40,8 +45,14 @@ export const useImportProductsMutation = () => {
       return importClient.importCsv(API_ENDPOINTS.IMPORT_PRODUCTS, input);
     },
     {
-      onSuccess: () => {
+      onSuccess: (data: any, variables: Input) => {
         toast.success(t('common:product-imported-successfully'));
+        if (typeof window !== 'undefined' && (window as any).pendo) {
+          (window as any).pendo.track('products_imported', {
+            shop_id: variables?.shop_id || '',
+            import_type: 'products',
+          });
+        }
       },
       onError: (error: any) => {
         toast.error(t(`common:${error?.response?.data.message}`));
@@ -65,8 +76,13 @@ export const useImportVariationOptionsMutation = () => {
       );
     },
     {
-      onSuccess: () => {
+      onSuccess: (data: any, variables: Input) => {
         toast.success(t('common:variation-options-imported-successfully'));
+        if (typeof window !== 'undefined' && (window as any).pendo) {
+          (window as any).pendo.track('variation_options_imported', {
+            shop_id: variables?.shop_id || '',
+          });
+        }
       },
       onError: (error: any) => {
         toast.error(t(`common:${error?.response?.data.message}`));

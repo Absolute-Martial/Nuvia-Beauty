@@ -133,6 +133,11 @@ export const useCreateOwnerTransferMutation = () => {
       const generateRedirectUrl = router.query.shop
         ? `/${router.query.shop}${Routes.ownershipTransferRequest.list}`
         : Routes.ownershipTransferRequest.list;
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('ownership_transfer_created', {
+          shop_slug: String(router.query.shop ?? ''),
+        });
+      }
       await Router.push(generateRedirectUrl, undefined, {
         locale: Config.defaultLanguage,
       });
@@ -200,8 +205,13 @@ export const useApproveOwnerTransferMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   return useMutation(ownershipTransferClient.approve, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
       toast.success(t('common:successfully-updated'));
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('ownership_transfer_approved', {
+          transfer_id: String(variables?.id ?? ''),
+        });
+      }
     },
     // Always refetch after error or success:
     onSettled: () => {

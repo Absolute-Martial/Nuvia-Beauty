@@ -45,6 +45,15 @@ export const CheckAvailabilityAction: React.FC<{
         {
           onSuccess: (data:any) => {
             setVerifiedResponse(data);
+            if (typeof window !== 'undefined' && (window as any).pendo) {
+              (window as any).pendo.track('checkout_verified', {
+                item_count: String(items?.length ?? 0),
+                total_amount: String(total ?? ''),
+                shipping_charge: String(data?.shipping_charge ?? ''),
+                total_tax: String(data?.total_tax ?? ''),
+                unavailable_product_count: String(data?.unavailable_products?.length ?? 0),
+              });
+            }
           },
           onError: (error: any) => {
             setError(error?.response?.data?.message);

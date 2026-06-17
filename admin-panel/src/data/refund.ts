@@ -10,8 +10,14 @@ export const useUpdateRefundMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   return useMutation(refundClient.update, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
       toast.success(t('common:successfully-updated'));
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('refund_updated', {
+          refund_id: String(variables?.id ?? ''),
+          refund_status: String(variables?.status ?? ''),
+        });
+      }
     },
     // Always refetch after error or success:
     onSettled: () => {

@@ -221,6 +221,20 @@ export default function ConsultationWorkflow({
       setActiveAnalysisTaskId(null);
       setAnalysisStatus(null);
       setRecommendations([]);
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('beauty_consultation_created', {
+          session_id: String(response.data.session?.id ?? ''),
+          shop_id: String(draft.shopId ?? ''),
+          consultation_mode: draft.consultationMode,
+          has_customer_id: String(Boolean(selectedCustomer?.value)),
+          skin_type_tags: parseCsv(draft.skinTypeTags).join(','),
+          tone_tags: parseCsv(draft.toneTags).join(','),
+          undertone_tags: parseCsv(draft.undertoneTags).join(','),
+          concern_tags_count: String(parseCsv(draft.concernTags).length),
+          ingredient_tags_count: String(parseCsv(draft.ingredientTags).length),
+          avoid_tags_count: String(parseCsv(draft.avoidTags).length),
+        });
+      }
     } catch (error: any) {
       setInlineError(error?.response?.data?.message ?? 'Failed to create the consultation session.');
     }
@@ -243,6 +257,12 @@ export default function ConsultationWorkflow({
       setActiveAnalysisTaskId(null);
       setAnalysisStatus(null);
       setRecommendations([]);
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('beauty_consultation_media_attached', {
+          session_id: String(activeSession.id),
+          media_asset_id: existingMediaId,
+        });
+      }
     } catch (error: any) {
       setInlineError(error?.response?.data?.message ?? 'Failed to attach the existing media asset.');
     }
@@ -279,6 +299,15 @@ export default function ConsultationWorkflow({
       setActiveAnalysisTaskId(null);
       setAnalysisStatus(null);
       setRecommendations([]);
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('beauty_consultation_media_uploaded', {
+          session_id: String(activeSession.id),
+          shop_id: String(draft.shopId ?? ''),
+          file_type: selectedFile.type || '',
+          file_size_kb: String(Math.round(selectedFile.size / 1024)),
+          upload_method: 'presigned',
+        });
+      }
       setSelectedFile(null);
     } catch (error: any) {
       setInlineError(error?.message ?? 'Failed to upload and attach consultation media.');
@@ -304,6 +333,13 @@ export default function ConsultationWorkflow({
       setAnalysisStatus(response.data);
       setActiveAnalysisTaskId(response.data.task?.id ?? null);
       setRecommendations(response.data.recommendations ?? []);
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('beauty_consultation_analysis_started', {
+          session_id: String(activeSession.id),
+          task_id: String(response.data.task?.id ?? ''),
+          task_status: response.data.task?.status || '',
+        });
+      }
     } catch (error: any) {
       setInlineError(error?.response?.data?.message ?? 'Failed to start the consultation analysis.');
     }
@@ -327,6 +363,13 @@ export default function ConsultationWorkflow({
             ? activeSession.session_state
             : 'analysis_completed',
       });
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('beauty_consultation_recommendations_loaded', {
+          session_id: String(activeSession.id),
+          recommendations_count: String(response.data.recommendations?.length ?? 0),
+          limit: '8',
+        });
+      }
     } catch (error: any) {
       setInlineError(error?.response?.data?.message ?? 'Failed to load recommendations.');
     }
@@ -345,6 +388,12 @@ export default function ConsultationWorkflow({
         notes: draft.notes || undefined,
       });
       setActiveSession(response.data.session);
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('beauty_consultation_saved', {
+          session_id: String(activeSession.id),
+          has_notes: String(Boolean(draft.notes)),
+        });
+      }
     } catch (error: any) {
       setInlineError(error?.response?.data?.message ?? 'Failed to save the consultation session.');
     }
@@ -363,6 +412,12 @@ export default function ConsultationWorkflow({
         discardReason: draft.notes || undefined,
       });
       setActiveSession(response.data.session);
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('beauty_consultation_discarded', {
+          session_id: String(activeSession.id),
+          has_discard_reason: String(Boolean(draft.notes)),
+        });
+      }
     } catch (error: any) {
       setInlineError(error?.response?.data?.message ?? 'Failed to discard the consultation session.');
     }

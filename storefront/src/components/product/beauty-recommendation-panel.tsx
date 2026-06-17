@@ -48,16 +48,38 @@ export default function BeautyRecommendationPanel({ product }: Props) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     reset();
-    mutate({
-      session_id: sessionId,
-      skin_type_tags: [skinType],
-      tone_tags: [tone],
-      undertone_tags: [undertone],
-      concern_tags: splitTags(concerns),
-      ingredient_tags: splitTags(ingredients),
-      avoid_tags: splitTags(avoidTags),
-      limit: 4,
-    });
+    const concernList = splitTags(concerns);
+    const ingredientList = splitTags(ingredients);
+    const avoidList = splitTags(avoidTags);
+    mutate(
+      {
+        session_id: sessionId,
+        skin_type_tags: [skinType],
+        tone_tags: [tone],
+        undertone_tags: [undertone],
+        concern_tags: concernList,
+        ingredient_tags: ingredientList,
+        avoid_tags: avoidList,
+        limit: 4,
+      },
+      {
+        onSuccess: (responseData: any) => {
+          if (typeof window !== 'undefined' && (window as any).pendo) {
+            (window as any).pendo.track('beauty_recommendations_generated', {
+              skin_type: skinType,
+              tone: tone,
+              undertone: undertone,
+              concern_tags: concernList.join(','),
+              ingredient_tags: ingredientList.join(','),
+              avoid_tags: avoidList.join(','),
+              recommendations_count: String(responseData?.data?.recommendations?.length ?? 0),
+              session_id: sessionId,
+              product_id: String(product?.id ?? ''),
+            });
+          }
+        },
+      }
+    );
   }
 
   const recommendations = data?.data?.recommendations ?? [];

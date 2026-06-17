@@ -100,7 +100,21 @@ export function useCreateOrder() {
   const { locale } = router;
   const { t } = useTranslation();
   const { mutate: createOrder, isLoading } = useMutation(client.orders.create, {
-    onSuccess: ({ tracking_number, payment_gateway, payment_intent }) => {
+    onSuccess: ({ tracking_number, payment_gateway, payment_intent }, variables: any) => {
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('order_placed', {
+          tracking_number: tracking_number || '',
+          payment_gateway: payment_gateway || '',
+          total_amount: String(variables?.total ?? ''),
+          subtotal: String(variables?.amount ?? ''),
+          discount: String(variables?.discount ?? 0),
+          delivery_fee: String(variables?.delivery_fee ?? ''),
+          sales_tax: String(variables?.sales_tax ?? ''),
+          item_count: String(variables?.products?.length ?? 0),
+          use_wallet_points: String(variables?.use_wallet_points ?? false),
+          delivery_time: variables?.delivery_time || '',
+        });
+      }
       if (tracking_number) {
         if ([PaymentGateway.COD].includes(payment_gateway as PaymentGateway)) {
           return router.push(
@@ -314,6 +328,11 @@ export function useGenerateDownloadableUrl() {
   );
 
   function generateDownloadableUrl(digital_file_id: string) {
+    if (typeof window !== 'undefined' && (window as any).pendo) {
+      (window as any).pendo.track('digital_product_downloaded', {
+        digital_file_id: digital_file_id,
+      });
+    }
     getDownloadableUrl({
       digital_file_id,
     });

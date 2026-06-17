@@ -62,10 +62,18 @@ export function useVerifyCoupon() {
   const [_, applyCoupon] = useAtom(couponAtom);
   let [formError, setFormError] = useState<any>(null);
   const { mutate, isLoading } = useMutation(client.coupons.verify, {
-    onSuccess: (data: any) => {
+    onSuccess: (data: any, variables: any) => {
       if (!data.is_valid) {
         setFormError({
           code: t(`common:${data?.message}`),
+        });
+      }
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('coupon_applied', {
+          coupon_code: variables?.code || '',
+          is_valid: String(Boolean(data?.is_valid)),
+          subtotal: String(variables?.sub_total ?? ''),
+          item_count: String(variables?.item?.length ?? 0),
         });
       }
       applyCoupon(data?.coupon);

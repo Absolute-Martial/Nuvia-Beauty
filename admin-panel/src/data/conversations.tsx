@@ -76,11 +76,18 @@ export const useCreateConversations = () => {
   const { permissions } = getAuthCredentials();
   let permission = hasAccess(adminOnly, permissions);
   return useMutation(conversationsClient.create, {
-    onSuccess: (data) => {
+    onSuccess: (data, variables: any) => {
       if (data?.id) {
         const routes = permission
           ? Routes?.message?.details(data?.id)
           : Routes?.shopMessage?.details(data?.id);
+        if (typeof window !== 'undefined' && (window as any).pendo) {
+          (window as any).pendo.track('conversation_created', {
+            conversation_id: String(data.id),
+            shop_id: String(variables?.shop_id ?? ''),
+            via: permission ? 'admin' : 'shop',
+          });
+        }
         toast.success(t('common:successfully-created'));
         router.push(`${routes}`);
         closeModal();
@@ -160,8 +167,13 @@ export const useSendMessage = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   return useMutation(conversationsClient.messageCreate, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
       toast.success(t('common:text-message-sent'));
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('message_sent', {
+          conversation_id: String(variables?.conversation_id ?? ''),
+        });
+      }
     },
     // Always refetch after error or success:
     onSettled: () => {

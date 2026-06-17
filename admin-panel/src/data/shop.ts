@@ -14,8 +14,13 @@ export const useApproveShopMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   return useMutation(shopClient.approve, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
       toast.success(t('common:successfully-updated'));
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('shop_approved', {
+          shop_id: String(variables?.id ?? ''),
+        });
+      }
     },
     // Always refetch after error or success:
     onSettled: () => {
@@ -28,8 +33,13 @@ export const useDisApproveShopMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   return useMutation(shopClient.disapprove, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
       toast.success(t('common:successfully-updated'));
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('shop_disapproved', {
+          shop_id: String(variables?.id ?? ''),
+        });
+      }
     },
     // Always refetch after error or success:
     onSettled: () => {
@@ -45,6 +55,11 @@ export const useCreateShopMutation = () => {
   return useMutation(shopClient.create, {
     onSuccess: () => {
       const { permissions } = getAuthCredentials();
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('shop_created', {
+          user_permissions: (permissions ?? []).join(','),
+        });
+      }
       if (hasAccess(adminOnly, permissions)) {
         return router.push(Routes.adminMyShops);
       }
@@ -77,10 +92,16 @@ export const useTransferShopOwnershipMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   return useMutation(shopClient.transferShopOwnership, {
-    onSuccess: (shop: Shop) => {
+    onSuccess: (shop: Shop, variables: any) => {
       toast.success(
         `${t('common:successfully-transferred')}${shop.owner?.name}`,
       );
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('shop_ownership_transferred', {
+          shop_id: String(shop?.id ?? variables?.id ?? ''),
+          new_owner_name: shop.owner?.name || '',
+        });
+      }
     },
     // Always refetch after error or success:
     onSettled: () => {

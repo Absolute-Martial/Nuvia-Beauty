@@ -23,6 +23,12 @@ export const useCreateProductMutation = () => {
       const generateRedirectUrl = router.query.shop
         ? `/${router.query.shop}${Routes.product.list}`
         : Routes.product.list;
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('admin_product_created', {
+          shop_slug: String(router.query.shop ?? ''),
+          redirect_url: generateRedirectUrl,
+        });
+      }
       await Router.push(generateRedirectUrl, undefined, {
         locale: Config.defaultLanguage,
       });
@@ -53,6 +59,12 @@ export const useUpdateProductMutation = () => {
       const generateRedirectUrl = router.query.shop
         ? `/${router.query.shop}${Routes.product.list}`
         : Routes.product.list;
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('admin_product_updated', {
+          product_slug: data?.slug || '',
+          shop_slug: String(router.query.shop ?? ''),
+        });
+      }
       await router.push(
         `${generateRedirectUrl}/${data?.slug}/edit`,
         undefined,
@@ -76,8 +88,13 @@ export const useDeleteProductMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
   return useMutation(productClient.delete, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
       toast.success(t('common:successfully-deleted'));
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('admin_product_deleted', {
+          product_id: String(variables?.id ?? variables ?? ''),
+        });
+      }
     },
     // Always refetch after error or success:
     onSettled: () => {
@@ -128,8 +145,14 @@ export const useGenerateDescriptionMutation = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation('common');
   return useMutation(productClient.generateDescription, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
       toast.success(t('Generated...'));
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('ai_description_generated', {
+          prompt_length: String(variables?.name?.length ?? 0),
+          product_name: variables?.name || '',
+        });
+      }
     },
     // Always refetch after error or success:
     onSettled: (data) => {

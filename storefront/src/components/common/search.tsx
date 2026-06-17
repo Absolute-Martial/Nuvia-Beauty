@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useCallback } from "react";
 import cn from "classnames";
 import SearchResultLoader from "@components/ui/loaders/search-result-loader";
 import { Image } from "@components/ui/image";
@@ -31,8 +31,21 @@ export default function Search() {
   function handleSearch(e: React.SyntheticEvent) {
     e.preventDefault();
   }
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   function handleAutoSearch(e: React.FormEvent<HTMLInputElement>) {
-    setSearchText(e.currentTarget.value);
+    const value = e.currentTarget.value;
+    setSearchText(value);
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    if (value) {
+      searchTimerRef.current = setTimeout(() => {
+        if (typeof window !== 'undefined' && (window as any).pendo) {
+          (window as any).pendo.track('product_searched', {
+            query: value,
+            results_count: String(data?.pages?.[0]?.data?.length ?? 0),
+          });
+        }
+      }, 800);
+    }
   }
 
   function clear() {

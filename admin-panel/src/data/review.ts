@@ -12,8 +12,13 @@ export const useAbuseReportMutation = () => {
   const { t } = useTranslation('common');
   const { closeModal } = useModalAction();
   return useMutation(reviewClient.reportAbuse, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
       toast.success(t('text-abuse-report-submitted'));
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('review_abuse_reported', {
+          review_id: String(variables?.id ?? ''),
+        });
+      }
     },
     // Always refetch after error or success:
     onSettled: () => {

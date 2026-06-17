@@ -153,8 +153,14 @@ export const useMakeOrRevokeAdminMutation = () => {
   const { t } = useTranslation();
 
   return useMutation(userClient.makeAdmin, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
       toast.success(t('common:successfully-updated'));
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('admin_role_changed', {
+          user_id: String(variables?.id ?? ''),
+          action: String(variables?.action ?? ''),
+        });
+      }
     },
     // Always refetch after error or success:
     onSettled: () => {
@@ -168,8 +174,13 @@ export const useBlockUserMutation = () => {
   const { t } = useTranslation();
 
   return useMutation(userClient.block, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
       toast.success(t('common:successfully-block'));
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('user_blocked', {
+          user_id: String(variables?.id ?? ''),
+        });
+      }
     },
     // Always refetch after error or success:
     onSettled: () => {
@@ -187,8 +198,13 @@ export const useUnblockUserMutation = () => {
   const { t } = useTranslation();
 
   return useMutation(userClient.unblock, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
       toast.success(t('common:successfully-unblock'));
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('user_unblocked', {
+          user_id: String(variables?.id ?? ''),
+        });
+      }
     },
     // Always refetch after error or success:
     onSettled: () => {
@@ -205,8 +221,14 @@ export const useAddWalletPointsMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   return useMutation(userClient.addWalletPoints, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
       toast.success(t('common:successfully-updated'));
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('wallet_points_added', {
+          user_id: String(variables?.customer_id ?? ''),
+          points_amount: String(variables?.points ?? ''),
+        });
+      }
     },
     // Always refetch after error or success:
     onSettled: () => {

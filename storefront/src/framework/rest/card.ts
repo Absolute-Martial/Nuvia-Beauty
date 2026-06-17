@@ -32,9 +32,14 @@ export const useDeleteCard = () => {
   const { closeModal } = useUI();
 
   const { mutate, isLoading, error } = useMutation(client.cards.remove, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
       closeModal();
       toast.success(`${t('common:card-successfully-deleted')}`);
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('payment_card_deleted', {
+          card_id: String(variables?.id ?? ''),
+        });
+      }
     },
     // Always refetch after error or success:
     onSettled: () => {
@@ -61,6 +66,11 @@ export function useAddCards(method_key?: any) {
         toast.success(`${t('common:card-successfully-add')}`, {
           toastId: 'success',
         });
+        if (typeof window !== 'undefined' && (window as any).pendo) {
+          (window as any).pendo.track('payment_card_added', {
+            payment_method_key: method_key || '',
+          });
+        }
       },
       onError: (error) => {
         const {

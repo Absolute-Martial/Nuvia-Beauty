@@ -19,7 +19,12 @@ export const useCreateCategoryMutation = () => {
   const { t } = useTranslation();
 
   return useMutation(categoryClient.create, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('admin_category_created', {
+          category_name: variables?.name || '',
+        });
+      }
       Router.push(Routes.category.list, undefined, {
         locale: Config.defaultLanguage,
       });
@@ -37,8 +42,13 @@ export const useDeleteCategoryMutation = () => {
   const { t } = useTranslation();
 
   return useMutation(categoryClient.delete, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
       toast.success(t('common:successfully-deleted'));
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('admin_category_deleted', {
+          category_id: String(variables?.id ?? variables ?? ''),
+        });
+      }
     },
     // Always refetch after error or success:
     onSettled: () => {

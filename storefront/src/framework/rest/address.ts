@@ -10,8 +10,13 @@ export const useDeleteAddress = () => {
   const { t } = useTranslation();
 
   return useMutation(client.address.deleteAddress, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
       toast.success(t('common:text-delete-success'));
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('address_deleted', {
+          address_id: String(variables?.id ?? ''),
+        });
+      }
       closeModal();
     },
     onError: (error) => {

@@ -11,6 +11,14 @@ export const useExportOrderQuery = (
     () => exportClient.exportOrder({ shop_id }),
     {
       ...options,
+      onSuccess: (data: string) => {
+        if (typeof window !== 'undefined' && (window as any).pendo) {
+          (window as any).pendo.track('orders_exported', {
+            shop_id: shop_id || '',
+          });
+        }
+        if (options?.onSuccess) options.onSuccess(data);
+      },
     }
   );
 };

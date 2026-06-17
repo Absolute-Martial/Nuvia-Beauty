@@ -38,6 +38,11 @@ export function useChangePassword() {
         return;
       }
       toast.success(t('password-update-success'));
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('password_changed', {
+          success: 'true',
+        });
+      }
     },
     onError: (error) => {
       const {
@@ -171,6 +176,11 @@ export function useOtpLogin() {
       setOtpState({
         ...initialOtpState,
       });
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('otp_login_completed', {
+          has_token: 'true',
+        });
+      }
       closeModal();
     },
     onError: (error: Error) => {
@@ -218,6 +228,11 @@ export function useResetPassword() {
   return useMutation(client.auth.resetPassword, {
     onSuccess: (data: any) => {
       if (data?.success) {
+        if (typeof window !== 'undefined' && (window as any).pendo) {
+          (window as any).pendo.track('password_reset_completed', {
+            success: 'true',
+          });
+        }
         toast.success('Successfully Reset Password!');
         closeModal();
         return;
@@ -318,6 +333,13 @@ export function useSocialLogin() {
       if (data?.token && data?.permissions?.length) {
         setToken(data?.token);
         setAuthorized(true);
+        if (typeof window !== 'undefined' && (window as any).pendo) {
+          (window as any).pendo.track('social_login_completed', {
+            provider: 'facebook',
+            has_token: String(Boolean(data?.token)),
+            permissions_count: String(data?.permissions?.length ?? 0),
+          });
+        }
         return;
       }
       if (!data.token) {
@@ -429,6 +451,11 @@ export const useUpdateEmail = () => {
     onSuccess: (data) => {
       if (data) {
         toast.success(t('successfully-email-updated'));
+        if (typeof window !== 'undefined' && (window as any).pendo) {
+          (window as any).pendo.track('email_updated', {
+            success: 'true',
+          });
+        }
       }
     },
     onError: (error) => {

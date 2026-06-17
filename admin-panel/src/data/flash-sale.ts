@@ -143,6 +143,11 @@ export const useCreateFlashSaleMutation = () => {
       const generateRedirectUrl = router.query.shop
         ? `/${router.query.shop}${Routes.flashSale.list}`
         : Routes.flashSale.list;
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('flash_sale_created', {
+          shop_slug: String(router.query.shop ?? ''),
+        });
+      }
       await Router.push(generateRedirectUrl, undefined, {
         locale: Config.defaultLanguage,
       });
