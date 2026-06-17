@@ -17,7 +17,13 @@ export const useCreateWithdrawMutation = () => {
   const queryClient = useQueryClient();
   const router = useRouter();
   return useMutation(withdrawClient.create, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('withdraw_request_created', {
+          shop_slug: String(router.query.shop ?? ''),
+          amount: String(variables?.amount ?? ''),
+        });
+      }
       router.push(`/${router.query.shop}/withdraws`);
     },
     // Always refetch after error or success:
@@ -31,8 +37,13 @@ export const useApproveWithdrawMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   return useMutation(withdrawClient.approve, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
       toast.success(t('common:successfully-updated'));
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('withdraw_approved', {
+          withdraw_id: String(variables?.id ?? ''),
+        });
+      }
     },
     // Always refetch after error or success:
     onSettled: () => {

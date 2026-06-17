@@ -142,6 +142,13 @@ export default function OrderDetailsPage() {
       a.href = data;
       a.setAttribute('download', 'order-invoice');
       a.click();
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('invoice_downloaded', {
+          order_id: String(query.orderId ?? ''),
+          language: locale || '',
+          is_rtl: String(isRTL),
+        });
+      }
     }
   }
 

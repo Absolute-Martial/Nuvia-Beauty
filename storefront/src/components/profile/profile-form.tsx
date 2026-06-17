@@ -26,6 +26,12 @@ const ProfileForm = ({ user }: { user: User }) => {
         avatar: values?.profile?.avatar?.[0],
       },
     });
+    if (typeof window !== 'undefined' && (window as any).pendo) {
+      (window as any).pendo.track('profile_updated', {
+        has_avatar: String(Boolean(values?.profile?.avatar?.[0])),
+        has_bio: String(Boolean(values?.profile?.bio)),
+      });
+    }
   }
 
   return (

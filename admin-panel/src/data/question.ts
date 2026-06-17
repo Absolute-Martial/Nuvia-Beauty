@@ -29,8 +29,13 @@ export const useReplyQuestionMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   return useMutation(questionClient.update, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
       toast.success(t('common:successfully-updated'));
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('question_replied', {
+          question_id: String(variables?.id ?? ''),
+        });
+      }
     },
     // Always refetch after error or success:
     onSettled: () => {

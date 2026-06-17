@@ -83,6 +83,13 @@ const SignUpForm: React.FC<Props> = ({ layout = "modal" }) => {
       {
         onSuccess: (data: any) => {
           if (data?.token && data?.permissions?.length) {
+            if (typeof window !== 'undefined' && (window as any).pendo) {
+              (window as any).pendo.track('user_registered', {
+                registration_method: 'email',
+                has_token: String(Boolean(data?.token)),
+                permissions_count: String(data?.permissions?.length ?? 0),
+              });
+            }
             if (layout === "page"){
               // Redirect to the my-account page
               return router.push(ROUTES.ACCOUNT);

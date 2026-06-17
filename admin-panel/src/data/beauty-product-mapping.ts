@@ -44,8 +44,19 @@ export const useUpsertBeautyProductMappingMutation = () => {
         ? beautyProductMappingClient.update(mappingId, payload)
         : beautyProductMappingClient.create(payload),
     {
-      onSuccess: () => {
+      onSuccess: (
+        data: any,
+        variables: { mappingId?: number; payload: BeautyProductMappingPayload },
+      ) => {
         toast.success(t('Beauty mapping saved.'));
+        if (typeof window !== 'undefined' && (window as any).pendo) {
+          (window as any).pendo.track('beauty_product_mapping_saved', {
+            product_id: String(variables?.payload?.product_id ?? ''),
+            mapping_id: String(variables?.mappingId ?? ''),
+            is_update: String(Boolean(variables?.mappingId)),
+            shop_id: String(variables?.payload?.shop_id ?? ''),
+          });
+        }
       },
       onSettled: () => {
         queryClient.invalidateQueries(API_ENDPOINTS.BEAUTY_PRODUCT_MAPPINGS);
@@ -64,12 +75,21 @@ export const useRecomputeBeautySignalsMutation = () => {
     ({ productIds }: { productIds?: number[] }) =>
       beautyProductMappingClient.recompute(productIds),
     {
-      onSuccess: (response) => {
+      onSuccess: (
+        response,
+        variables: { productIds?: number[] },
+      ) => {
         const count =
           response?.data?.product_signal_recompute?.recomputed_count ?? 0;
         toast.success(
           t(`Recomputed product signals for ${count} product(s).`),
         );
+        if (typeof window !== 'undefined' && (window as any).pendo) {
+          (window as any).pendo.track('beauty_signals_recomputed', {
+            product_ids_count: String(variables?.productIds?.length ?? 0),
+            recomputed_count: String(count),
+          });
+        }
       },
       onError: (error: any) => {
         toast.error(error?.response?.data?.message ?? t('Signal recompute failed.'));

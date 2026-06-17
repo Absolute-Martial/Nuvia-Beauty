@@ -19,11 +19,17 @@ const ReviewForm: React.FC = () => {
     handleSubmit,
     formState: { errors },
   } = useForm<ReviewFormValues>();
+  let currentRating = 0;
   function onSubmit(values: ReviewFormValues) {
-    // console.log(values, "review");
+    if (typeof window !== 'undefined' && (window as any).pendo) {
+      (window as any).pendo.track('review_submitted', {
+        rating: String(currentRating),
+        has_message: String(Boolean(values?.message)),
+      });
+    }
   }
   const ratingChanged = (newRating: any) => {
-    // console.log(newRating);
+    currentRating = newRating;
   };
   const { t } = useTranslation();
   return (

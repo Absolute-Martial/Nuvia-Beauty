@@ -166,6 +166,15 @@ export default function CreateOrUpdateAddressForm() {
       id: customerId,
       address: [formattedInput],
     });
+    if (typeof window !== 'undefined' && (window as any).pendo) {
+      (window as any).pendo.track('address_saved', {
+        address_type: values?.type || '',
+        is_update: String(Boolean(address?.id)),
+        country: values?.address?.country || '',
+        city: values?.address?.city || '',
+        state: values?.address?.state || '',
+      });
+    }
     closeModal();
   };
 

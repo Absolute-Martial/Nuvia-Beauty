@@ -36,6 +36,11 @@ export const useAddStaffMutation = () => {
 
   return useMutation(staffClient.addStaff, {
     onSuccess: () => {
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('staff_member_added', {
+          shop_slug: String(router?.query?.shop ?? ''),
+        });
+      }
       router.push(`/${router?.query?.shop}${Routes.staff.list}`);
       toast.success(t('common:successfully-created'));
     },
@@ -51,8 +56,13 @@ export const useRemoveStaffMutation = () => {
   const { t } = useTranslation();
 
   return useMutation(staffClient.removeStaff, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
       toast.success(t('common:successfully-deleted'));
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('staff_member_removed', {
+          staff_id: String(variables?.id ?? ''),
+        });
+      }
     },
     // Always refetch after error or success:
     onSettled: () => {

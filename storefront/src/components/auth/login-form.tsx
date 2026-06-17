@@ -72,6 +72,12 @@ const LoginForm: React.FC<Props> = ({ layout = 'modal' }) => {
       {
         onSuccess: (data: any) => {
           if (data?.token && data?.permissions?.length) {
+            if (typeof window !== 'undefined' && (window as any).pendo) {
+              (window as any).pendo.track('user_logged_in', {
+                login_method: 'email',
+                layout: layout,
+              });
+            }
             if (layout === 'page') {
               // Redirect to the my-account page
               return router.push(ROUTES.ACCOUNT);

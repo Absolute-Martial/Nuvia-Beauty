@@ -29,6 +29,10 @@ export function useToggleWishlist({
   } = useMutation(client.wishlist.toggle, {
     onSuccess: () => {
       // toast.success(`${t('text-added-from-wishlist')}`);
+      const wasInWishlist = queryClient.getQueryData([
+        `${API_ENDPOINTS.WISHLIST}/in_wishlist`,
+        { product_id, variation_option_id },
+      ]);
       queryClient.setQueryData(
         [
           `${API_ENDPOINTS.WISHLIST}/in_wishlist`,
@@ -37,6 +41,13 @@ export function useToggleWishlist({
         (old: any) => !old
       );
       queryClient.refetchQueries([API_ENDPOINTS.IN_WISHLIST]);
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('wishlist_toggled', {
+          product_id: String(product_id),
+          variation_option_id: String(variation_option_id ?? ''),
+          action: wasInWishlist ? 'removed' : 'added',
+        });
+      }
     },
     onError: (error) => {
       if (axios.isAxiosError(error)) {

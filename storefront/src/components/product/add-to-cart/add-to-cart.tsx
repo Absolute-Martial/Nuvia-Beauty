@@ -46,10 +46,28 @@ export const AddToCart = ({
   ) => {
     e.stopPropagation();
     addItemToCart(item, 1);
+    if (typeof window !== 'undefined' && (window as any).pendo) {
+      (window as any).pendo.track('product_added_to_cart', {
+        product_id: String(data?.id ?? ''),
+        product_name: data?.name ?? '',
+        product_slug: data?.slug ?? '',
+        variation_id: String(variation?.id ?? ''),
+        quantity: '1',
+        unit_price: String(item?.price ?? ''),
+        product_type: data?.product_type ?? '',
+      });
+    }
   };
   const handleRemoveClick = (e: any) => {
     e.stopPropagation();
     removeItemFromCart(item.id);
+    if (typeof window !== 'undefined' && (window as any).pendo) {
+      (window as any).pendo.track('product_removed_from_cart', {
+        product_id: String(data?.id ?? ''),
+        product_name: data?.name ?? '',
+        item_id: String(item?.id ?? ''),
+      });
+    }
   };
   const outOfStock = isInCart(item?.id) && !isInStock(item.id);
 

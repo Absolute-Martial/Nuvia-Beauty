@@ -19,6 +19,11 @@ export const useCreateCouponMutation = () => {
       const generateRedirectUrl = router.query.shop
         ? `/${router.query.shop}${Routes.coupon.list}`
         : Routes.coupon.list;
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('coupon_created', {
+          shop_slug: String(router.query.shop ?? ''),
+        });
+      }
       await Router.push(generateRedirectUrl, undefined, {
         locale: Config.defaultLanguage,
       });
@@ -39,8 +44,13 @@ export const useDeleteCouponMutation = () => {
   const { t } = useTranslation();
 
   return useMutation(couponClient.delete, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
       toast.success(t('common:successfully-deleted'));
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('coupon_deleted', {
+          coupon_id: String(variables?.id ?? variables ?? ''),
+        });
+      }
     },
     // Always refetch after error or success:
     onSettled: () => {

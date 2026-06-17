@@ -77,6 +77,12 @@ const CustomForm: React.FC<CustomFormProps> = ({
         onSuccess: () => {
           // toast.success(t('subscribe-success-message'));
           setSuccessMessage(true);
+          if (typeof window !== 'undefined' && (window as any).pendo) {
+            (window as any).pendo.track('newsletter_subscribed', {
+              layout: layout,
+              source: 'mailchimp',
+            });
+          }
         },
         onError: (err: any) => {
           // @ts-ignore

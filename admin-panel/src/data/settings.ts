@@ -26,6 +26,11 @@ export const useUpdateSettingsMutation = () => {
         data?.options?.maintenance,
       );
       toast.success(t('common:successfully-updated'));
+      if (typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('settings_updated', {
+          is_maintenance_mode: String(Boolean(data?.options?.maintenance?.isUnderMaintenance)),
+        });
+      }
     },
     // Always refetch after error or success:
     onSettled: () => {

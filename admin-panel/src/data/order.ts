@@ -71,6 +71,12 @@ export function useCreateOrderMutation() {
   const { mutate: createOrder, isLoading } = useMutation(orderClient.create, {
     onSuccess: (data: any) => {
       if (data?.id) {
+        if (typeof window !== 'undefined' && (window as any).pendo) {
+          (window as any).pendo.track('admin_order_created', {
+            order_id: String(data.id),
+            language: locale || '',
+          });
+        }
         router.push(`${Routes.order.list}/${data?.id}`);
       }
     },
@@ -112,8 +118,14 @@ export const useUpdateOrderMutation = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   return useMutation(orderClient.update, {
-    onSuccess: () => {
+    onSuccess: (data: any, variables: any) => {
       toast.success(t('common:successfully-updated'));
+      if (variables?.order_status && typeof window !== 'undefined' && (window as any).pendo) {
+        (window as any).pendo.track('order_status_updated', {
+          order_id: String(variables?.id ?? ''),
+          new_order_status: String(variables?.order_status ?? ''),
+        });
+      }
     },
     // Always refetch after error or success:
     onSettled: () => {
