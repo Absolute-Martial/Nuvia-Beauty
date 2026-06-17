@@ -15,7 +15,7 @@ import {
 } from '@/types';
 import { mapPaginatorData } from '@/utils/data-mappers';
 import axios from 'axios';
-import { setEmailVerified } from '@/utils/auth-utils';
+import { getAuthCredentials, setEmailVerified } from '@/utils/auth-utils';
 import { type } from 'os';
 
 export const useMeQuery = () => {
@@ -25,11 +25,39 @@ export const useMeQuery = () => {
   return useQuery<User, Error>([API_ENDPOINTS.ME], userClient.me, {
     retry: false,
 
-    onSuccess: () => {
+    onSuccess: (data) => {
       if (router.pathname === Routes.verifyEmail) {
         setEmailVerified(true);
         router.replace(Routes.dashboard);
       }
+
+      const { role } = getAuthCredentials();
+      const shop = data?.managed_shop || data?.shops?.[0];
+      pendo.identify({
+        visitor: {
+          id: data.id,
+          email: data.email,
+          full_name: data.name,
+          isActive: data.is_active,
+          emailVerified: data.email_verified,
+          role: role,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        },
+        ...(shop
+          ? {
+              account: {
+                id: shop.id,
+                name: shop.name,
+                ownerId: shop.owner_id,
+                slug: shop.slug,
+                isActive: shop.is_active,
+                createdAt: shop.created_at,
+                updatedAt: shop.updated_at,
+              },
+            }
+          : {}),
+      });
     },
 
     onError: (err) => {
@@ -56,6 +84,7 @@ export const useLogoutMutation = () => {
 
   return useMutation(userClient.logout, {
     onSuccess: () => {
+      pendo.clearSession();
       Cookies.remove(AUTH_CRED);
       router.replace(Routes.login);
       toast.success(t('common:successfully-logout'), {
