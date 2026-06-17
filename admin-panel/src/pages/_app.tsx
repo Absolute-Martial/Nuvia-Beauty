@@ -15,7 +15,7 @@ import { ModalProvider } from '@/components/ui/modal/modal.context';
 import DefaultSeo from '@/components/ui/default-seo';
 import ManagedModal from '@/components/ui/modal/managed-modal';
 import { CartProvider } from '@/contexts/quick-cart/cart.context';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { NextPageWithLayout } from '@/types';
 import { useRouter } from 'next/router';
 import PrivateRoute from '@/utils/private-route';
@@ -44,6 +44,11 @@ const CustomApp = ({ Component, pageProps }: AppPropsWithLayout) => {
 
   const { locale } = useRouter();
   const dir = Config.getDirection(locale);
+
+  useEffect(() => {
+    pendo.initialize({ visitor: { id: '' } });
+  }, []);
+
   return (
     <div dir={dir}>
       <QueryClientProvider client={queryClient}>

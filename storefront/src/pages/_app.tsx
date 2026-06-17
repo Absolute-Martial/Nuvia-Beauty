@@ -4,7 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { ManagedUIContext } from '@contexts/ui.context';
 import ManagedModal from '@components/common/modal/managed-modal';
 import ManagedDrawer from '@components/ui/drawer/managed-drawer';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { Hydrate } from 'react-query/hydration';
 import { ToastContainer } from 'react-toastify';
@@ -74,6 +74,14 @@ function CustomApp({
 
   const router = useRouter();
   const dir = getDirection(router.locale);
+
+  const pendoInitialized = useRef(false);
+  useEffect(() => {
+    if (!pendoInitialized.current) {
+      pendo.initialize({ visitor: { id: '' } });
+      pendoInitialized.current = true;
+    }
+  }, []);
 
   useEffect(() => {
     document.documentElement.dir = dir;

@@ -131,6 +131,7 @@ export function useLogout() {
   const { mutate: signOut, isLoading } = useMutation(client.auth.logout, {
     onSuccess: (data) => {
       if (data) {
+        pendo.clearSession();
         setToken('');
         removeAuthCredentials();
         setAuthorized(false);
@@ -373,6 +374,14 @@ export const useUser = () => {
       onSuccess: (data) => {
         setEmailVerified(true);
         setAuthorized(true);
+
+        pendo.identify({
+          visitor: {
+            id: data.id,
+            email: data.email,
+            full_name: data.name,
+          },
+        });
       },
       onError: (err) => {
         if (axios.isAxiosError(err)) {
