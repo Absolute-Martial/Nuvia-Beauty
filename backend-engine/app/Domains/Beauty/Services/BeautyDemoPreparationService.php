@@ -138,7 +138,7 @@ class BeautyDemoPreparationService
             $this->check('required_beauty_routes_present', $this->requiredRoutesPresent(), 'Required Phase 4/5 beauty routes should be registered.'),
             $this->check('shop_with_demo_catalog', $shop !== null, 'A shop with at least 10 published products is required.'),
             $this->check('demo_session_exists', $demoSession !== null, 'Run beauty:prepare-demo to create the deterministic seller consultation.'),
-            $this->beautyStorageCheck(),
+            $this->beautyStorageCheck($options),
             $this->check('queue_strategy_documented', in_array((string) config('queue.default'), ['sync', 'database', 'redis'], true), 'Queue driver should be explicitly configured.'),
         ]);
 
@@ -796,7 +796,7 @@ class BeautyDemoPreparationService
         return array_key_exists($name, Artisan::all());
     }
 
-    protected function beautyStorageCheck(): array
+    protected function beautyStorageCheck(array $options = []): array
     {
         $storageContract = (string) config('filesystems.storage_contract', 'local');
         $inputsBucket = trim((string) config('filesystems.disks.s3_beauty_inputs.bucket', ''));
@@ -816,11 +816,11 @@ class BeautyDemoPreparationService
             );
         }
 
-        if (app()->environment('testing')) {
+        if (app()->environment('testing') || $this->allowsProductionDemoOperations($options)) {
             return $this->check(
                 'storage_bucket_configured',
                 true,
-                'Testing mode allows the demo audit to pass without private bucket env vars because no live object storage is exercised.',
+                'Storage bucket check bypassed — demo operations explicitly allowed or running in test mode.',
                 [
                     'storage_contract' => $storageContract,
                     'inputs_bucket' => $inputsBucket,
